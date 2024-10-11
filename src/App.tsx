@@ -1,38 +1,24 @@
-import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
-import "./App.css";
-import { Button } from "./components/ui/button";
+import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import "./index.css";
+import { setDefaultWindowSize } from "./lib/window";
+import { routeTree } from "./routeTree.gen";
+
+const router = createRouter({ routeTree });
+
+// Register the router instance for type safety
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  useEffect(() => {
+    setDefaultWindowSize();
+  }, []);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
-  }
-
-  return (
-    <div className="_container min-h-screen">
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <Button type="submit">Greet</Button>
-      </form>
-
-      <p>{greetMsg}</p>
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

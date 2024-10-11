@@ -1,6 +1,7 @@
-import { Link, Outlet, createRootRoute } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/router-devtools";
+import { Outlet, createRootRoute } from "@tanstack/react-router";
+// import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { useEffect } from "react";
+import { NavMenu } from "~/components/custom/NavMenu";
 import { setDefaultWindowSize } from "~/lib/window";
 
 export const Route = createRootRoute({
@@ -8,23 +9,15 @@ export const Route = createRootRoute({
 });
 
 function Root() {
-  useEffect(() => {
-    setDefaultWindowSize();
-  }, []);
-
   return (
     <>
-      <div className="flex gap-2 p-2">
-        <Link to="/" className="[&.active]:font-bold">
-          Home
-        </Link>{" "}
-        <Link to="/settings" className="[&.active]:font-bold">
-          Settings
-        </Link>
+      <div className="flex min-h-screen flex-col">
+        <NavMenu />
+        <div className="flex-1">
+          <Outlet />
+        </div>
       </div>
-      <hr />
-      <Outlet />
-      <TanStackRouterDevtools />
+      {/* <TanStackRouterDevtools /> */}
     </>
   );
 }
