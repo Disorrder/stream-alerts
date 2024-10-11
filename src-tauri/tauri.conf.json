@@ -1,44 +1,44 @@
 {
-	"$schema": "https://schema.tauri.app/config/2.0.0",
-	"productName": "stream-alerts",
-	"version": "0.1.0",
-	"identifier": "com.stream-alerts.app",
-	"build": {
-		"beforeDevCommand": "bun run dev",
-		"devUrl": "http://localhost:1420",
-		"beforeBuildCommand": "bun run build",
-		"frontendDist": "../dist"
-	},
-	"app": {
-		"windows": [
-			{
-				"title": "stream-alerts",
-				"width": 800,
-				"height": 600
-			}
-		],
-		"security": {
-			"csp": null
-		}
-	},
-	"bundle": {
-		"createUpdaterArtifacts": true,
-		"active": true,
-		"targets": "all",
-		"icon": [
-			"icons/32x32.png",
-			"icons/128x128.png",
-			"icons/128x128@2x.png",
-			"icons/icon.icns",
-			"icons/icon.ico"
-		]
-	},
-	"plugins": {
-		"updater": {
-			"pubkey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuwJIE0U48h2r5BT9jxGq\n8CfOrmnZuRyKkgXZeaQlsiQVsB3xzs40SYKwIpdVIWnxFNuABxVjWNoj4dbHUxMG\nnDFSWMzX+7b2+yWegrGUeXHwzOZXZc8/3OBpJoIUy0X7evY6e3ObuTXV8iUg3Rui\nyifXvdNmqGb5TNQOp1nb4BF8EEfRoCIqqg55JYNpGFPfzH/lWazabDjW9U8BMExZ\nww71EBT8oU1HD6ryL6Gts41+wNw44BExOS6NPz1O36PaxX6IG2DTvMkYjLAFKO3K\nEQpzzi4GQK0dtLbFKtQlMw7Ed8Hv7FOv7K8fwPWI+OY/cYL7Hi6N49ASu7FNCVM5\ngQIDAQAB\n-----END PUBLIC KEY-----",
-			"endpoints": [
-				"https://github.com/Disorrder/stream-alerts/releases/latest/download/latest.json"
-			]
-		}
-	}
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "stream-alerts",
+  "version": "0.1.0",
+  "identifier": "com.stream-alerts.app",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "stream-alerts",
+        "width": 800,
+        "height": 600
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "createUpdaterArtifacts": true,
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuwJIE0U48h2r5BT9jxGq\n8CfOrmnZuRyKkgXZeaQlsiQVsB3xzs40SYKwIpdVIWnxFNuABxVjWNoj4dbHUxMG\nnDFSWMzX+7b2+yWegrGUeXHwzOZXZc8/3OBpJoIUy0X7evY6e3ObuTXV8iUg3Rui\nyifXvdNmqGb5TNQOp1nb4BF8EEfRoCIqqg55JYNpGFPfzH/lWazabDjW9U8BMExZ\nww71EBT8oU1HD6ryL6Gts41+wNw44BExOS6NPz1O36PaxX6IG2DTvMkYjLAFKO3K\nEQpzzi4GQK0dtLbFKtQlMw7Ed8Hv7FOv7K8fwPWI+OY/cYL7Hi6N49ASu7FNCVM5\ngQIDAQAB\n-----END PUBLIC KEY-----",
+      "endpoints": [
+        "https://github.com/Disorrder/stream-alerts/releases/latest/download/latest.json"
+      ]
+    }
+  }
 }
