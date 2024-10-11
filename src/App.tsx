@@ -1,7 +1,7 @@
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { useEffect } from "react";
 import "./index.css";
-import { setDefaultWindowSize } from "./lib/window";
+import { initWindowSize } from "./lib/window";
 import { routeTree } from "./routeTree.gen";
 
 const router = createRouter({ routeTree });
@@ -15,7 +15,7 @@ declare module "@tanstack/react-router" {
 
 function App() {
   useEffect(() => {
-    setDefaultWindowSize();
+    initWindowSize();
   }, []);
 
   return <RouterProvider router={router} />;
