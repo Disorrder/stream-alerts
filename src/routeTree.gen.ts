@@ -11,95 +11,177 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as SettingsImport } from './routes/settings'
-import { Route as ModerationImport } from './routes/moderation'
-import { Route as IndexImport } from './routes/index'
+import { Route as AuthImport } from './routes/auth'
+import { Route as AppImport } from './routes/_app'
+import { Route as AppIndexImport } from './routes/_app.index'
+import { Route as AuthTwitchCallbackImport } from './routes/auth.twitch-callback'
+import { Route as AppSettingsImport } from './routes/_app.settings'
+import { Route as AppModerationImport } from './routes/_app.moderation'
 
 // Create/Update Routes
 
-const SettingsRoute = SettingsImport.update({
-  path: '/settings',
+const AuthRoute = AuthImport.update({
+  path: '/auth',
   getParentRoute: () => rootRoute,
 } as any)
 
-const ModerationRoute = ModerationImport.update({
-  path: '/moderation',
+const AppRoute = AppImport.update({
+  id: '/_app',
   getParentRoute: () => rootRoute,
 } as any)
 
-const IndexRoute = IndexImport.update({
+const AppIndexRoute = AppIndexImport.update({
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => AppRoute,
+} as any)
+
+const AuthTwitchCallbackRoute = AuthTwitchCallbackImport.update({
+  path: '/twitch-callback',
+  getParentRoute: () => AuthRoute,
+} as any)
+
+const AppSettingsRoute = AppSettingsImport.update({
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+
+const AppModerationRoute = AppModerationImport.update({
+  path: '/moderation',
+  getParentRoute: () => AppRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AppImport
       parentRoute: typeof rootRoute
     }
-    '/moderation': {
-      id: '/moderation'
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
+    }
+    '/_app/moderation': {
+      id: '/_app/moderation'
       path: '/moderation'
       fullPath: '/moderation'
-      preLoaderRoute: typeof ModerationImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof AppModerationImport
+      parentRoute: typeof AppImport
     }
-    '/settings': {
-      id: '/settings'
+    '/_app/settings': {
+      id: '/_app/settings'
       path: '/settings'
       fullPath: '/settings'
-      preLoaderRoute: typeof SettingsImport
-      parentRoute: typeof rootRoute
+      preLoaderRoute: typeof AppSettingsImport
+      parentRoute: typeof AppImport
+    }
+    '/auth/twitch-callback': {
+      id: '/auth/twitch-callback'
+      path: '/twitch-callback'
+      fullPath: '/auth/twitch-callback'
+      preLoaderRoute: typeof AuthTwitchCallbackImport
+      parentRoute: typeof AuthImport
+    }
+    '/_app/': {
+      id: '/_app/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AppIndexImport
+      parentRoute: typeof AppImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface AppRouteChildren {
+  AppModerationRoute: typeof AppModerationRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppModerationRoute: AppModerationRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface AuthRouteChildren {
+  AuthTwitchCallbackRoute: typeof AuthTwitchCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthTwitchCallbackRoute: AuthTwitchCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/moderation': typeof ModerationRoute
-  '/settings': typeof SettingsRoute
+  '': typeof AppRouteWithChildren
+  '/auth': typeof AuthRouteWithChildren
+  '/moderation': typeof AppModerationRoute
+  '/settings': typeof AppSettingsRoute
+  '/auth/twitch-callback': typeof AuthTwitchCallbackRoute
+  '/': typeof AppIndexRoute
 }
 
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/moderation': typeof ModerationRoute
-  '/settings': typeof SettingsRoute
+  '/auth': typeof AuthRouteWithChildren
+  '/moderation': typeof AppModerationRoute
+  '/settings': typeof AppSettingsRoute
+  '/auth/twitch-callback': typeof AuthTwitchCallbackRoute
+  '/': typeof AppIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/': typeof IndexRoute
-  '/moderation': typeof ModerationRoute
-  '/settings': typeof SettingsRoute
+  '/_app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRouteWithChildren
+  '/_app/moderation': typeof AppModerationRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/auth/twitch-callback': typeof AuthTwitchCallbackRoute
+  '/_app/': typeof AppIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/moderation' | '/settings'
+  fullPaths:
+    | ''
+    | '/auth'
+    | '/moderation'
+    | '/settings'
+    | '/auth/twitch-callback'
+    | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/moderation' | '/settings'
-  id: '__root__' | '/' | '/moderation' | '/settings'
+  to: '/auth' | '/moderation' | '/settings' | '/auth/twitch-callback' | '/'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/auth'
+    | '/_app/moderation'
+    | '/_app/settings'
+    | '/auth/twitch-callback'
+    | '/_app/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ModerationRoute: typeof ModerationRoute
-  SettingsRoute: typeof SettingsRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ModerationRoute: ModerationRoute,
-  SettingsRoute: SettingsRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRouteWithChildren,
 }
 
 export const routeTree = rootRoute
@@ -114,19 +196,39 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/",
-        "/moderation",
-        "/settings"
+        "/_app",
+        "/auth"
       ]
     },
-    "/": {
-      "filePath": "index.tsx"
+    "/_app": {
+      "filePath": "_app.tsx",
+      "children": [
+        "/_app/moderation",
+        "/_app/settings",
+        "/_app/"
+      ]
     },
-    "/moderation": {
-      "filePath": "moderation.tsx"
+    "/auth": {
+      "filePath": "auth.tsx",
+      "children": [
+        "/auth/twitch-callback"
+      ]
     },
-    "/settings": {
-      "filePath": "settings.tsx"
+    "/_app/moderation": {
+      "filePath": "_app.moderation.tsx",
+      "parent": "/_app"
+    },
+    "/_app/settings": {
+      "filePath": "_app.settings.tsx",
+      "parent": "/_app"
+    },
+    "/auth/twitch-callback": {
+      "filePath": "auth.twitch-callback.tsx",
+      "parent": "/auth"
+    },
+    "/_app/": {
+      "filePath": "_app.index.tsx",
+      "parent": "/_app"
     }
   }
 }
