@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { socket } from "~/lib/socket";
 
 export const Route = createFileRoute("/auth/twitch-callback")({
   component: TwitchCallback,
@@ -11,7 +12,7 @@ function TwitchCallback() {
 
   useEffect(() => {
     if (!access_token) return;
-    // invoke("set_twitch_token", { access_token });
+    socket.emit("set_twitch_token", { access_token });
   }, [access_token]);
 
   return (

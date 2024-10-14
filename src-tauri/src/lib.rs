@@ -1,3 +1,6 @@
+use std::env;
+use tauri_plugin_shell::ShellExt;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -8,9 +11,6 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-use std::env;
-use tauri_plugin_shell::ShellExt;
-
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[tauri::command]
@@ -20,7 +20,7 @@ fn greet(name: &str) -> String {
 
 #[tauri::command]
 async fn authenticate_twitch(app_handle: tauri::AppHandle) -> Result<String, String> {
-    let (auth_tx, auth_rx) = std::sync::mpsc::channel();
+    let (_auth_tx, auth_rx) = std::sync::mpsc::channel();
 
     let client_id = env::var("TWITCH_CLIENT_ID").expect("TWITCH_CLIENT_ID must be set");
     let redirect_uri = "http://localhost:6969/auth/twitch-callback";
