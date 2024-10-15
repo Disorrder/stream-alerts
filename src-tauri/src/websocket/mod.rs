@@ -1,16 +1,19 @@
+mod twitch;
+
 use axum::routing::get;
 use socketioxide::{extract::SocketRef, SocketIo};
 use tower_http::cors::{Any, CorsLayer};
+
+use twitch::set_token;
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let (layer, io) = SocketIo::new_layer();
 
     // Register a handler for the default namespace
     io.ns("/", |s: SocketRef| {
-        // For each "message" event received, send a "message-back" event with the "Hello World!" event
-        s.on("message", |s: SocketRef| {
-            s.emit("message-back", "Hello World!").ok();
-        });
+        s.on("message", &message);
+
+        s.on("twitch:set_token", set_token);
     });
 
     let cors = CorsLayer::new()
@@ -27,4 +30,9 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     axum::serve(listener, app).await.unwrap();
 
     Ok(())
+}
+
+// For each "message" event received, send a "message-back" event with the "Hello World!" event
+fn message(s: SocketRef) {
+    s.emit("message-back", "Hello World!").ok();
 }

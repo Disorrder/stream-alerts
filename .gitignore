@@ -27,3 +27,4 @@ dist-ssr
 # Tauri
 private.pem
 public.pem
+*.sled
