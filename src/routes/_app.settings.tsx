@@ -9,12 +9,10 @@ export const Route = createFileRoute("/_app/settings")({
 });
 
 function Settings() {
-  const twitchAccessToken = useSettingsStore(
-    (state) => state.twitchAccessToken,
-  );
+  const twitch = useSettingsStore((state) => state.twitch);
 
   async function handleAuthenticateTwitch() {
-    await invoke("authenticate_twitch");
+    await invoke("twitch_open_oauth");
   }
 
   return (
@@ -27,7 +25,7 @@ function Settings() {
         </Button>
       </div>
       <div>
-        <div>Twitch token: {twitchAccessToken}</div>
+        <div>Twitch: {twitch?.display_name}</div>
       </div>
     </div>
   );

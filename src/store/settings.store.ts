@@ -1,16 +1,17 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { TwitchAccount } from "~/types/accounts.type";
 
 type SettingsState = {
-  twitchAccessToken: string | null;
-  setTwitchTokens: (twitchAccessToken: string) => void;
+  twitch: TwitchAccount | null;
+  setTwitch: (twitch: TwitchAccount) => void;
 };
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      twitchAccessToken: null,
-      setTwitchTokens: (twitchAccessToken) => set({ twitchAccessToken }),
+      twitch: null,
+      setTwitch: (twitch: TwitchAccount) => set({ twitch }),
     }),
     { name: "settings" },
   ),

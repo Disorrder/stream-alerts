@@ -4,30 +4,34 @@ import { socket } from "~/lib/socket";
 
 export const Route = createFileRoute("/auth/twitch-callback")({
   component: TwitchCallback,
+  validateSearch: (search) => {
+    return {
+      code: search.code as string,
+    };
+  },
 });
 
 function TwitchCallback() {
-  const hashParams = new URLSearchParams(location.hash.replace("#", ""));
-  const access_token = hashParams.get("access_token");
+  const { code } = Route.useSearch();
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (!access_token) return;
-    socket.emit("twitch:set_token", { access_token });
-    socket.on("twitch:token_set", (token: string) => {
-      if (token !== access_token) {
-        console.error("[JS] Token mismatch:", token, access_token);
+    if (!code) return;
+    socket.emit("twitch:auth_by_code", { code });
+    socket.on("twitch:auth_by_code:response", (res: string) => {
+      if (res !== "ok") {
+        console.error("[JS] Something went wrong:", res);
         return;
       }
       setDone(true);
     });
-  }, [access_token]);
+  }, [code]);
 
   return (
     <div className="px-4 py-2">
       Hello from Twitch Callback!
       <br />
-      hash: {access_token}
+      Auth code: {code}
       <br />
       {done ? "You can close this page now." : "Loading..."}
     </div>

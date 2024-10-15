@@ -1,19 +1,41 @@
 mod twitch;
 
 use axum::routing::get;
-use socketioxide::{extract::SocketRef, SocketIo};
+use socketioxide::{
+    extract::{Data, SocketRef},
+    SocketIo,
+};
+use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
-use twitch::set_token;
+use twitch::{TwitchCode, WebsocketTwitchController};
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let (layer, io) = SocketIo::new_layer();
 
-    // Register a handler for the default namespace
-    io.ns("/", |s: SocketRef| {
-        s.on("message", &message);
+    let twitch_controller = match WebsocketTwitchController::new() {
+        Ok(controller) => controller,
+        Err(e) => {
+            eprintln!("Failed to create WebsocketTwitchController: {}", e);
+            return Err(e);
+        }
+    };
+    let twitch_controller = Arc::new(twitch_controller);
 
-        s.on("twitch:set_token", set_token);
+    // Register a handler for the default namespace
+    io.ns("/", move |s: SocketRef| {
+        s.on("message", &message);
+        s.on("profile:get", &get_profile);
+
+        s.on(
+            "twitch:auth_by_code",
+            move |s: SocketRef, data: Data<TwitchCode>| {
+                let twitch_controller = twitch_controller.clone();
+                tokio::spawn(async move {
+                    twitch_controller.auth_by_code(s, data).await;
+                });
+            },
+        );
     });
 
     let cors = CorsLayer::new()
@@ -35,4 +57,9 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
 // For each "message" event received, send a "message-back" event with the "Hello World!" event
 fn message(s: SocketRef) {
     s.emit("message-back", "Hello World!").ok();
+}
+
+fn get_profile(s: SocketRef) {
+    println!("[Rust] Get Profile");
+    s.emit("profile:patch", "TODO: Profile Data").ok();
 }
