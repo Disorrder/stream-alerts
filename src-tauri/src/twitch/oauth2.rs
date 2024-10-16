@@ -81,10 +81,24 @@ impl TwitchOAuthService {
         Ok(token_data)
     }
 
-    pub fn get_authorization_url(&self, state: &str) -> String {
+    pub fn get_authorization_url(&self, scopes: Option<Vec<&str>>) -> String {
+        let scopes = scopes.unwrap_or_else(|| {
+            vec![
+                "channel:read:hype_train", // TODO
+                // "channel:read:redemptions", // TODO
+                "channel:read:subscriptions",
+                // "channel:read:vips", // TODO
+                // "moderation:read", // TODO
+                // "moderator:read:banned_users", // TODO
+                // "moderator:read:shoutouts", //? Not sure, need to explore
+                "user:read:email",
+                "user:read:subscriptions",
+            ]
+        });
+        let scope = scopes.join("+");
         format!(
-            "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope=channel:read:subscriptions",
-            self.client_id, self.redirect_uri,
+            "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}",
+            self.client_id, self.redirect_uri, scope,
         )
     }
 }
