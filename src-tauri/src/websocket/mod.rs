@@ -13,13 +13,7 @@ use twitch::{TwitchCode, WebsocketTwitchController};
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let (layer, io) = SocketIo::new_layer();
 
-    let twitch_controller = match WebsocketTwitchController::new() {
-        Ok(controller) => controller,
-        Err(e) => {
-            eprintln!("Failed to create WebsocketTwitchController: {}", e);
-            return Err(e);
-        }
-    };
+    let twitch_controller = WebsocketTwitchController::new()?;
     let twitch_controller = Arc::new(twitch_controller);
 
     // Register a handler for the default namespace
@@ -32,7 +26,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             move |s: SocketRef, data: Data<TwitchCode>| {
                 let twitch_controller = twitch_controller.clone();
                 tokio::spawn(async move {
-                    twitch_controller.auth_by_code(s, data).await;
+                    let _ = twitch_controller.auth_by_code(s, data).await;
                 });
             },
         );
