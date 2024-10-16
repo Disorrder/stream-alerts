@@ -23,23 +23,20 @@ impl WebsocketTwitchController {
         })
     }
 
-    pub async fn auth_by_code(&self, s: SocketRef, data: Data<TwitchCode>) {
+    pub async fn auth_by_code(&self, s: SocketRef, data: Data<TwitchCode>) -> Result<(), String> {
         let code = &data.code;
 
-        let token_data = match self.oauth_service.exchange_code_for_token(code).await {
-            Ok(data) => data,
-            Err(e) => {
-                eprintln!("Failed to exchange code for token: {}", e);
-                s.emit("twitch:auth_by_code:error", "Failed to authenticate")
-                    .ok();
-                return;
-            }
-        };
+        let token_data = self.oauth_service.exchange_code_for_token(code).await.map_err(|e| {
+            eprintln!("Failed to exchange code for token: {}", e);
+            s.emit("twitch:auth_by_code:error", "Failed to authenticate").ok();
+            "Failed to authenticate".to_string()
+        })?;
 
         println!("Token data: {:#?}", token_data);
 
         self.store.set_account(&token_data).unwrap();
         s.emit("twitch:auth_by_code:response", "ok").ok();
+        Ok(())
     }
 
     pub fn get_account(&self, s: SocketRef) {
