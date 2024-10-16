@@ -26,7 +26,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
             move |s: SocketRef, data: Data<TwitchCode>| {
                 let twitch_controller = twitch_controller.clone();
                 tokio::spawn(async move {
-                    twitch_controller.auth_by_code(s, data).await;
+                    let _ = twitch_controller.auth_by_code(s, data).await;
                 });
             },
         );

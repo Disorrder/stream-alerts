@@ -1,6 +1,5 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 #![allow(
     clippy::must_use_candidate,
@@ -15,5 +14,5 @@ use dotenv::dotenv;
 // #[tokio::main]
 fn main() {
     dotenv().ok(); // This will load the .env file
-    return stream_alerts_lib::run();
+    stream_alerts_lib::run()
 }
