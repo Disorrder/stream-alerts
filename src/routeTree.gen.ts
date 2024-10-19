@@ -22,11 +22,13 @@ import { Route as AppModerationImport } from './routes/_app.moderation'
 // Create/Update Routes
 
 const WRoute = WImport.update({
+  id: '/w',
   path: '/w',
   getParentRoute: () => rootRoute,
 } as any)
 
 const AuthRoute = AuthImport.update({
+  id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRoute,
 } as any)
@@ -37,21 +39,25 @@ const AppRoute = AppImport.update({
 } as any)
 
 const AppIndexRoute = AppIndexImport.update({
+  id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
 
 const AuthTwitchCallbackRoute = AuthTwitchCallbackImport.update({
+  id: '/twitch-callback',
   path: '/twitch-callback',
   getParentRoute: () => AuthRoute,
 } as any)
 
 const AppSettingsRoute = AppSettingsImport.update({
+  id: '/settings',
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 
 const AppModerationRoute = AppModerationImport.update({
+  id: '/moderation',
   path: '/moderation',
   getParentRoute: () => AppRoute,
 } as any)
