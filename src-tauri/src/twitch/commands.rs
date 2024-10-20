@@ -3,7 +3,8 @@ use tauri_plugin_shell::ShellExt;
 
 #[tauri::command]
 pub fn twitch_open_oauth(app_handle: tauri::AppHandle) {
-    let client_id = env::var("TWITCH_CLIENT_ID").expect("TWITCH_CLIENT_ID must be set");
+    // let client_id = env::var("TWITCH_CLIENT_ID").expect("TWITCH_CLIENT_ID must be set");
+    let client_id = "48xtpnf4j5zyr1ib91bncm8yucq2rj";
     let redirect_uri = "http://localhost:6969/auth/twitch-callback";
 
     let auth_url = format!(

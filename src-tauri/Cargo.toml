@@ -18,8 +18,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.0.0", features = [] }
 
 [dependencies]
-tauri = { version = "2.0.0", features = [] }
-tauri-plugin-shell = "2.0.0"
+tauri = { version = "2.0.4", features = ["devtools"] }
+tauri-plugin-shell = "2.0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 axum = "0.7.7"
@@ -31,7 +31,17 @@ url = "2.5.2"
 tower-http = { version = "0.6.1", features = ["cors"] }
 sled = "0.34.7"
 anyhow = "1.0.89"
-twitch_api = { version = "0.7.0-rc.8", features = ["client", "twitch_oauth2", "helix", "eventsub", "reqwest"] }
+twitch_api = { version = "0.7.0-rc.8", features = [
+  "client",
+  "twitch_oauth2",
+  "helix",
+  "eventsub",
+  "reqwest",
+] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"
+
+[profile.release.package.wry]
+debug = true
+debug-assertions = true

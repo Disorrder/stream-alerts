@@ -1,6 +1,7 @@
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { socket } from "~/lib/socket";
+import { api } from "~/lib/api";
 
 export const Route = createFileRoute("/auth/twitch-callback")({
   component: TwitchCallback,
@@ -15,16 +16,17 @@ function TwitchCallback() {
   const { code } = Route.useSearch();
   const [done, setDone] = useState(false);
 
+  const sendCodeMutation = useMutation({
+    mutationFn: (code: string) => api.post("/twitch/auth/code", { code }),
+    onSuccess: () => {
+      setDone(true);
+    },
+  });
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     if (!code) return;
-    socket.emit("twitch:auth_by_code", { code });
-    socket.on("twitch:auth_by_code:response", (res: string) => {
-      if (res !== "ok") {
-        console.error("[JS] Something went wrong:", res);
-        return;
-      }
-      setDone(true);
-    });
+    sendCodeMutation.mutate(code);
   }, [code]);
 
   return (
