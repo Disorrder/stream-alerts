@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { DebugPanel } from "~/components/custom/DebugPanel";
 // import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { socket } from "~/lib/socket";
 
@@ -21,6 +22,7 @@ function Root() {
     <>
       <QueryClientProvider client={queryClient}>
         <Outlet />
+        <DebugPanel />
       </QueryClientProvider>
       {/* <TanStackRouterDevtools /> */}
     </>
