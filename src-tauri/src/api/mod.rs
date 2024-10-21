@@ -1,16 +1,18 @@
-use std::env;
-
 use crate::config::store::Store;
 use crate::twitch::controller::routes as twitch_routes;
+use axum::routing::get;
 use axum::Router;
-// use std::env;
 use tower_http::cors::CorsLayer;
 
 pub async fn run(store: Store) -> Result<(), Box<dyn std::error::Error>> {
-    let port = env::var("TAURI_API_PORT").unwrap_or("6967".to_string());
+    let port = env!("TAURI_API_PORT", "TAURI_API_PORT not set at build time")
+        .to_string()
+        .parse::<u16>()
+        .unwrap_or(6967);
     let host = format!("0.0.0.0:{}", port);
 
     let app = Router::new()
+        .route("/", get(|| async { "Hello, world!" }))
         .nest("/twitch", twitch_routes(store))
         .layer(CorsLayer::permissive());
 

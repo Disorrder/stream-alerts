@@ -1,7 +1,6 @@
 use anyhow::{anyhow, Result};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::env;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenResponse {
@@ -21,13 +20,24 @@ pub struct TwitchOAuthService {
 
 impl TwitchOAuthService {
     pub fn new() -> Result<Self> {
+        let client_id =
+            env!("TWITCH_CLIENT_ID", "TWITCH_CLIENT_ID not set at build time").to_string();
+        let client_secret = env!(
+            "TWITCH_CLIENT_SECRET",
+            "TWITCH_CLIENT_SECRET not set at build time"
+        )
+        .to_string();
+        let port = env!("TAURI_WEB_PORT", "TAURI_WEB_PORT not set at build time")
+            .to_string()
+            .parse::<u16>()
+            .unwrap_or(6969);
+        let redirect_uri = format!("http://localhost:{}/auth/twitch-callback", port);
+
         Ok(Self {
             client: Client::new(),
-            client_id: env::var("TWITCH_CLIENT_ID")
-                .map_err(|_| anyhow!("TWITCH_CLIENT_ID must be set"))?,
-            client_secret: env::var("TWITCH_CLIENT_SECRET")
-                .map_err(|_| anyhow!("TWITCH_CLIENT_SECRET must be set"))?,
-            redirect_uri: String::from("http://localhost:6969/auth/twitch-callback"),
+            client_id,
+            client_secret,
+            redirect_uri,
         })
     }
 

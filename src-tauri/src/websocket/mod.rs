@@ -3,6 +3,11 @@ use socketioxide::{extract::SocketRef, SocketIo};
 use tower_http::cors::{Any, CorsLayer};
 
 pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+    let port = env!("TAURI_WS_PORT", "TAURI_WS_PORT not set at build time")
+        .to_string()
+        .parse::<u16>()
+        .unwrap_or(6968);
+    let host = format!("0.0.0.0:{}", port);
     let (layer, io) = SocketIo::new_layer();
 
     // Register a handler for the default namespace
@@ -21,7 +26,7 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         .layer(layer)
         .layer(cors);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:6968").await.unwrap();
+    let listener = tokio::net::TcpListener::bind(host).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 
     Ok(())

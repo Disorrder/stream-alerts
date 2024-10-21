@@ -1,11 +1,13 @@
-use std::env;
 use tauri_plugin_shell::ShellExt;
 
 #[tauri::command]
 pub fn twitch_open_oauth(app_handle: tauri::AppHandle) {
-    // let client_id = env::var("TWITCH_CLIENT_ID").expect("TWITCH_CLIENT_ID must be set");
-    let client_id = "48xtpnf4j5zyr1ib91bncm8yucq2rj";
-    let redirect_uri = "http://localhost:6969/auth/twitch-callback";
+    let client_id = env!("TWITCH_CLIENT_ID", "TWITCH_CLIENT_ID not set at build time").to_string();
+    let port = env!("TAURI_WEB_PORT", "TAURI_WEB_PORT not set at build time")
+        .to_string()
+        .parse::<u16>()
+        .unwrap_or(6969);
+    let redirect_uri = format!("http://localhost:{}/auth/twitch-callback", port);
 
     let auth_url = format!(
         "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope=channel:read:subscriptions",

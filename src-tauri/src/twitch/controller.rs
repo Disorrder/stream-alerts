@@ -1,11 +1,10 @@
 use std::sync::Arc;
 
+use super::store::TwitchStore;
 use crate::config::store::Store;
 use crate::twitch::oauth2::TwitchOAuthService;
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use reqwest::StatusCode;
-
-use super::store::TwitchStore;
 
 pub struct TwitchState {
     store: TwitchStore,
