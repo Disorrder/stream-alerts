@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "Stream Alerts",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
