@@ -21,7 +21,7 @@ impl TwitchStore for Store {
     }
 
     fn set_twitch_tokens(&self, tokens: &TokenResponse) -> Result<()> {
-        self.db.insert("twitch_tokens", serde_json::to_vec(tokens)?);
+        let _ = self.db.insert("twitch_tokens", serde_json::to_vec(tokens)?);
         self.db.flush()?;
         Ok(())
     }
