@@ -1,9 +1,9 @@
 import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { register } from "@tauri-apps/plugin-deep-link";
 import { useEffect } from "react";
 import "./index.css";
 import { initWindowSize } from "./lib/window";
 import { routeTree } from "./routeTree.gen";
-import { register } from "@tauri-apps/plugin-deep-link";
 
 const router = createRouter({ routeTree });
 

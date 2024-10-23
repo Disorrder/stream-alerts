@@ -1,41 +1,42 @@
-use anyhow::{anyhow, Result};
-use sled::Db;
-
-use crate::config::store::Store;
-
 use super::oauth2::TokenResponse;
+use crate::config::store::Store;
+use anyhow::Result;
 
-pub struct TwitchStore {
-    db: Db,
+pub trait TwitchStore {
+    fn get_twitch_tokens(&self) -> Result<Option<TokenResponse>>;
+    fn set_twitch_tokens(&self, tokens: &TokenResponse) -> Result<()>;
+    fn delete_twitch_tokens(&self) -> Result<()>;
 }
 
-impl TwitchStore {
-    pub fn new(store: Store) -> Result<Self> {
-        let db = store.get_db();
-        Ok(Self { db })
-    }
-
-    pub fn set_tokens(&self, tokens: &TokenResponse) -> Result<()> {
-        let bytes = serde_json::to_vec(tokens)?;
-        self.db.insert("twitch_tokens", bytes)?;
-        self.db.flush()?;
-        Ok(())
-    }
-
-    pub fn get_tokens(&self) -> Result<Option<TokenResponse>> {
-        match self.db.get("twitch_tokens")? {
-            Some(bytes) => {
-                let tokens = serde_json::from_slice(&bytes)
-                    .map_err(|e| anyhow!("Failed to convert bytes to string: {}", e))?;
+impl TwitchStore for Store {
+    fn get_twitch_tokens(&self) -> Result<Option<TokenResponse>> {
+        let tokens = self.db.get("twitch_tokens");
+        match tokens {
+            Ok(Some(bytes)) => {
+                let tokens = serde_json::from_slice(&bytes)?;
                 Ok(Some(tokens))
             }
-            None => Ok(None),
+            _ => Ok(None),
         }
     }
 
-    pub fn delete_tokens(&self) -> Result<()> {
+    fn set_twitch_tokens(&self, tokens: &TokenResponse) -> Result<()> {
+        self.db.insert("twitch_tokens", serde_json::to_vec(tokens)?);
+        self.db.flush()?;
+        Ok(())
+    }
+
+    fn delete_twitch_tokens(&self) -> Result<()> {
         self.db.remove("twitch_tokens")?;
         self.db.flush()?;
         Ok(())
+    }
+}
+
+impl Clone for Store {
+    fn clone(&self) -> Self {
+        Store {
+            db: self.db.clone(),
+        }
     }
 }

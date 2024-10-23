@@ -6,7 +6,7 @@ use sled::Db;
 const STORE_PATH: &str = "stream_alerts.sled";
 
 pub struct Store {
-    db: Db,
+    pub db: Db,
 }
 
 impl Store {

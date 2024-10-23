@@ -1,27 +1,31 @@
-use std::sync::Arc;
-
-use super::store::TwitchStore;
-use crate::config::store::Store;
 use crate::twitch::oauth2::TwitchOAuthService;
+use crate::twitch::sdk::TwitchSDK;
+use crate::{config::store::Store, twitch::store::TwitchStore};
+use axum::routing::get;
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use reqwest::StatusCode;
+use serde_json::json;
+use std::sync::Arc;
 
 pub struct TwitchState {
-    store: TwitchStore,
+    store: Store,
     oauth_service: TwitchOAuthService,
+    sdk: TwitchSDK,
 }
 
 pub fn routes(store: Store) -> Router {
     let oauth_service = TwitchOAuthService::new().unwrap();
-    let twitch_store = TwitchStore::new(store).unwrap();
+    let sdk = TwitchSDK::new(store.clone());
 
     let state = Arc::new(TwitchState {
-        store: twitch_store,
+        store,
         oauth_service,
+        sdk,
     });
 
     let router = Router::new()
         .route("/auth/code", post(auth_by_code))
+        .route("/user", get(get_user))
         .with_state(state);
     router
 }
@@ -44,7 +48,18 @@ async fn auth_by_code(
 
     println!("Token data: {:#?}", token_data);
 
-    state.store.set_tokens(&token_data.unwrap()).unwrap();
+    state.store.set_twitch_tokens(&token_data.unwrap()).unwrap();
 
     (StatusCode::OK, "OK")
+}
+
+async fn get_user(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
+    let user = state.sdk.get_user().await;
+    match user {
+        Ok(user) => (StatusCode::OK, Json(json!(user))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e })),
+        ),
+    }
 }

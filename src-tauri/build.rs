@@ -34,10 +34,6 @@ fn main() {
         env::var("TAURI_API_PORT").unwrap()
     );
     println!(
-        "cargo:rustc-env=TAURI_ORIGIN={}",
-        env::var("TAURI_ORIGIN").unwrap()
-    );
-    println!(
         "cargo:rustc-env=TWITCH_CLIENT_ID={}",
         env::var("TWITCH_CLIENT_ID").unwrap()
     );
