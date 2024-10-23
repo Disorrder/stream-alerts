@@ -6,7 +6,9 @@ import { cn } from "~/lib/utils";
 
 export function DebugPanel() {
   const [open, setOpen] = useState(true);
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<string[]>([
+    `Location: ${window.location.href}`,
+  ]);
 
   useEffect(() => {
     socket.on("debug", (_message: string) => {

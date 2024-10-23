@@ -16,8 +16,10 @@ import { Route as AuthImport } from './routes/auth'
 import { Route as AppImport } from './routes/_app'
 import { Route as AppIndexImport } from './routes/_app.index'
 import { Route as AuthTwitchCallbackImport } from './routes/auth.twitch-callback'
+import { Route as AppWidgetsImport } from './routes/_app.widgets'
 import { Route as AppSettingsImport } from './routes/_app.settings'
-import { Route as AppModerationImport } from './routes/_app.moderation'
+import { Route as AppLogsImport } from './routes/_app.logs'
+import { Route as AppEventsImport } from './routes/_app.events'
 
 // Create/Update Routes
 
@@ -50,15 +52,27 @@ const AuthTwitchCallbackRoute = AuthTwitchCallbackImport.update({
   getParentRoute: () => AuthRoute,
 } as any)
 
+const AppWidgetsRoute = AppWidgetsImport.update({
+  id: '/widgets',
+  path: '/widgets',
+  getParentRoute: () => AppRoute,
+} as any)
+
 const AppSettingsRoute = AppSettingsImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 
-const AppModerationRoute = AppModerationImport.update({
-  id: '/moderation',
-  path: '/moderation',
+const AppLogsRoute = AppLogsImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AppRoute,
+} as any)
+
+const AppEventsRoute = AppEventsImport.update({
+  id: '/events',
+  path: '/events',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -87,11 +101,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WImport
       parentRoute: typeof rootRoute
     }
-    '/_app/moderation': {
-      id: '/_app/moderation'
-      path: '/moderation'
-      fullPath: '/moderation'
-      preLoaderRoute: typeof AppModerationImport
+    '/_app/events': {
+      id: '/_app/events'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof AppEventsImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/logs': {
+      id: '/_app/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof AppLogsImport
       parentRoute: typeof AppImport
     }
     '/_app/settings': {
@@ -99,6 +120,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsImport
+      parentRoute: typeof AppImport
+    }
+    '/_app/widgets': {
+      id: '/_app/widgets'
+      path: '/widgets'
+      fullPath: '/widgets'
+      preLoaderRoute: typeof AppWidgetsImport
       parentRoute: typeof AppImport
     }
     '/auth/twitch-callback': {
@@ -121,14 +149,18 @@ declare module '@tanstack/react-router' {
 // Create and export the route tree
 
 interface AppRouteChildren {
-  AppModerationRoute: typeof AppModerationRoute
+  AppEventsRoute: typeof AppEventsRoute
+  AppLogsRoute: typeof AppLogsRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppWidgetsRoute: typeof AppWidgetsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppModerationRoute: AppModerationRoute,
+  AppEventsRoute: AppEventsRoute,
+  AppLogsRoute: AppLogsRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppWidgetsRoute: AppWidgetsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -148,8 +180,10 @@ export interface FileRoutesByFullPath {
   '': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/w': typeof WRoute
-  '/moderation': typeof AppModerationRoute
+  '/events': typeof AppEventsRoute
+  '/logs': typeof AppLogsRoute
   '/settings': typeof AppSettingsRoute
+  '/widgets': typeof AppWidgetsRoute
   '/auth/twitch-callback': typeof AuthTwitchCallbackRoute
   '/': typeof AppIndexRoute
 }
@@ -157,8 +191,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/w': typeof WRoute
-  '/moderation': typeof AppModerationRoute
+  '/events': typeof AppEventsRoute
+  '/logs': typeof AppLogsRoute
   '/settings': typeof AppSettingsRoute
+  '/widgets': typeof AppWidgetsRoute
   '/auth/twitch-callback': typeof AuthTwitchCallbackRoute
   '/': typeof AppIndexRoute
 }
@@ -168,8 +204,10 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/w': typeof WRoute
-  '/_app/moderation': typeof AppModerationRoute
+  '/_app/events': typeof AppEventsRoute
+  '/_app/logs': typeof AppLogsRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/widgets': typeof AppWidgetsRoute
   '/auth/twitch-callback': typeof AuthTwitchCallbackRoute
   '/_app/': typeof AppIndexRoute
 }
@@ -180,16 +218,20 @@ export interface FileRouteTypes {
     | ''
     | '/auth'
     | '/w'
-    | '/moderation'
+    | '/events'
+    | '/logs'
     | '/settings'
+    | '/widgets'
     | '/auth/twitch-callback'
     | '/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/w'
-    | '/moderation'
+    | '/events'
+    | '/logs'
     | '/settings'
+    | '/widgets'
     | '/auth/twitch-callback'
     | '/'
   id:
@@ -197,8 +239,10 @@ export interface FileRouteTypes {
     | '/_app'
     | '/auth'
     | '/w'
-    | '/_app/moderation'
+    | '/_app/events'
+    | '/_app/logs'
     | '/_app/settings'
+    | '/_app/widgets'
     | '/auth/twitch-callback'
     | '/_app/'
   fileRoutesById: FileRoutesById
@@ -236,8 +280,10 @@ export const routeTree = rootRoute
     "/_app": {
       "filePath": "_app.tsx",
       "children": [
-        "/_app/moderation",
+        "/_app/events",
+        "/_app/logs",
         "/_app/settings",
+        "/_app/widgets",
         "/_app/"
       ]
     },
@@ -250,12 +296,20 @@ export const routeTree = rootRoute
     "/w": {
       "filePath": "w.tsx"
     },
-    "/_app/moderation": {
-      "filePath": "_app.moderation.tsx",
+    "/_app/events": {
+      "filePath": "_app.events.tsx",
+      "parent": "/_app"
+    },
+    "/_app/logs": {
+      "filePath": "_app.logs.tsx",
       "parent": "/_app"
     },
     "/_app/settings": {
       "filePath": "_app.settings.tsx",
+      "parent": "/_app"
+    },
+    "/_app/widgets": {
+      "filePath": "_app.widgets.tsx",
       "parent": "/_app"
     },
     "/auth/twitch-callback": {
