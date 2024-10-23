@@ -51,25 +51,9 @@ impl TwitchSDK {
             client_secret,
         )
         .await;
-        println!(
-            "[DEBUG] TwitchSDK::get_or_create_token access_token {:?}",
-            access_token.secret()
-        );
-        println!(
-            "[DEBUG] TwitchSDK::get_or_create_token refresh_token {:?}",
-            refresh_token.as_str()
-        );
         match token_res {
             Ok(token_data) => {
-                println!(
-                    "[DEBUG] TwitchSDK::get_or_create_token pre token_data {:?}",
-                    token_data
-                );
                 *token_ref.lock().await = Some(token_data.clone());
-                println!(
-                    "[DEBUG] TwitchSDK::get_or_create_token token_data {:?}",
-                    token_data
-                );
                 Ok(token_data)
             }
             Err(e) => {
@@ -97,5 +81,18 @@ impl TwitchSDK {
             .into_iter()
             .next()
             .ok_or_else(|| "User not found".to_string())
+    }
+
+    pub async fn get_followers_count(&self) -> Result<u64, String> {
+        let token = self.get_or_create_token().await?;
+        let user_id = token.user_id.clone();
+
+        let client = self.client.clone();
+        let followers = client
+            .get_total_channel_followers(&user_id, &token)
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(followers as u64)
     }
 }

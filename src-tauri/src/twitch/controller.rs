@@ -26,6 +26,7 @@ pub fn routes(store: Store) -> Router {
     let router = Router::new()
         .route("/auth/code", post(auth_by_code))
         .route("/user", get(get_user))
+        .route("/followers", get(get_followers_count))
         .with_state(state);
     router
 }
@@ -34,9 +35,7 @@ async fn auth_by_code(
     State(state): State<Arc<TwitchState>>,
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
-    println!("Received event: {:?}", payload);
     let code = payload.get("code").unwrap().as_str().unwrap();
-
     let token_data = state
         .oauth_service
         .exchange_code_for_token(code)
@@ -45,8 +44,6 @@ async fn auth_by_code(
             eprintln!("Failed to exchange code for token: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, "Failed to authenticate")
         });
-
-    println!("Token data: {:#?}", token_data);
 
     state.store.set_twitch_tokens(&token_data.unwrap()).unwrap();
 
@@ -62,4 +59,9 @@ async fn get_user(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
             Json(json!({ "error": e })),
         ),
     }
+}
+
+async fn get_followers_count(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
+    let count = state.sdk.get_followers_count().await;
+    (StatusCode::OK, Json(json!(count)))
 }

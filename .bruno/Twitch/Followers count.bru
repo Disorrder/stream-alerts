@@ -1,0 +1,15 @@
+meta {
+  name: Followers count
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{api}}/twitch/user
+  body: none
+  auth: none
+}
+
+body:json {
+  {"code": "qweqwe"}
+}
