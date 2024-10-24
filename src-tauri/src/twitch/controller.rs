@@ -25,6 +25,7 @@ pub fn routes(store: Store) -> Router {
 
     let router = Router::new()
         .route("/auth/code", post(auth_by_code))
+        .route("/refresh", post(refresh_token))
         .route("/user", get(get_user))
         .route("/followers", get(get_followers_count))
         .with_state(state);
@@ -39,6 +40,23 @@ async fn auth_by_code(
     let token_data = state.oauth_service.exchange_code_for_token(code).await;
 
     state.store.set_twitch_tokens(&token_data.unwrap()).unwrap(); //? replace unwrap
+
+    (StatusCode::OK, "OK".to_string())
+}
+
+async fn refresh_token(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
+    let token_data = match state.store.get_twitch_tokens() {
+        Ok(Some(data)) => data,
+        Ok(None) => return (StatusCode::UNAUTHORIZED, "No token data".to_string()),
+        Err(e) => {
+            println!("🚀 ~ refresh_token ~ e: {:?}", e);
+            return (StatusCode::UNAUTHORIZED, e.to_string());
+        }
+    };
+
+    let refresh_token = token_data.refresh_token;
+    let token_data = state.oauth_service.refresh_token(&refresh_token).await;
+    state.store.set_twitch_tokens(&token_data.unwrap()).unwrap();
 
     (StatusCode::OK, "OK".to_string())
 }
