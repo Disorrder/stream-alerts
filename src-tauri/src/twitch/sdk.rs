@@ -73,7 +73,7 @@ impl TwitchSDK {
             .try_collect()
             .await
             .map_err(|e| {
-                println!("[ERROR] TwitchSDK::get_user: {}", e);
+                println!("[ERROR] TwitchSDK::get_user: {}", e); //? throw 401
                 e.to_string()
             })?;
 

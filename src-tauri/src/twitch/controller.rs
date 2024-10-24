@@ -36,28 +36,18 @@ async fn auth_by_code(
     Json(payload): Json<serde_json::Value>,
 ) -> impl IntoResponse {
     let code = payload.get("code").unwrap().as_str().unwrap();
-    let token_data = state
-        .oauth_service
-        .exchange_code_for_token(code)
-        .await
-        .map_err(|e| {
-            eprintln!("Failed to exchange code for token: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, "Failed to authenticate")
-        });
+    let token_data = state.oauth_service.exchange_code_for_token(code).await;
 
-    state.store.set_twitch_tokens(&token_data.unwrap()).unwrap();
+    state.store.set_twitch_tokens(&token_data.unwrap()).unwrap(); //? replace unwrap
 
-    (StatusCode::OK, "OK")
+    (StatusCode::OK, "OK".to_string())
 }
 
 async fn get_user(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
     let user = state.sdk.get_user().await;
     match user {
         Ok(user) => (StatusCode::OK, Json(json!(user))),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({ "error": e })),
-        ),
+        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!(e))),
     }
 }
 
