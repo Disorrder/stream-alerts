@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { TwitchUser } from "~/types/accounts.type";
+import type { TwitchUser } from "~/types/accounts.types";
 
 type SettingsState = {
   twitch: TwitchUser | null;

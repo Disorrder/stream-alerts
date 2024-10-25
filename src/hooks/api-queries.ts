@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "~/lib/api";
-import type { TwitchUser } from "~/types/accounts.type";
+import type { TwitchUser } from "~/types/accounts.types";
 
 /* Twitch */
 
