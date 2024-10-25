@@ -1,10 +1,10 @@
 use super::oauth2::TokenResponse;
-use crate::config::store::Store;
+use crate::{common::errors::HttpError, config::store::Store};
 use anyhow::Result;
 
 pub trait TwitchStore {
     fn get_twitch_tokens(&self) -> Result<Option<TokenResponse>>;
-    fn set_twitch_tokens(&self, tokens: &TokenResponse) -> Result<()>;
+    fn set_twitch_tokens(&self, tokens: &TokenResponse) -> Result<(), HttpError>;
     fn delete_twitch_tokens(&self) -> Result<()>;
 }
 
@@ -20,9 +20,10 @@ impl TwitchStore for Store {
         }
     }
 
-    fn set_twitch_tokens(&self, tokens: &TokenResponse) -> Result<()> {
-        let _ = self.db.insert("twitch_tokens", serde_json::to_vec(tokens)?);
-        self.db.flush()?;
+    fn set_twitch_tokens(&self, tokens: &TokenResponse) -> Result<(), HttpError> {
+        let bytes = serde_json::to_vec(tokens).map_err(HttpError::JsonDecodeError)?;
+        let _ = self.db.insert("twitch_tokens", bytes);
+        self.db.flush().map_err(HttpError::StoreError)?;
         Ok(())
     }
 

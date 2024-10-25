@@ -1,5 +1,6 @@
-use anyhow::{anyhow, Result};
-use reqwest::{Client, StatusCode};
+use crate::common::errors::HttpError;
+use anyhow::Result;
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,10 +42,7 @@ impl TwitchOAuthService {
         })
     }
 
-    pub async fn exchange_code_for_token(
-        &self,
-        code: &str,
-    ) -> Result<TokenResponse, (StatusCode, String)> {
+    pub async fn exchange_code_for_token(&self, code: &str) -> Result<TokenResponse, HttpError> {
         println!("Exchanging code for token: {}", code);
         let params = [
             ("client_id", self.client_id.as_str()),
@@ -60,12 +58,7 @@ impl TwitchOAuthService {
             .form(&params)
             .send()
             .await
-            .map_err(|e| {
-                (
-                    e.status().unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-                    e.to_string(),
-                )
-            })?;
+            .map_err(HttpError::TwitchError)?;
 
         if !response.status().is_success() {
             let status = response.status();
@@ -73,19 +66,17 @@ impl TwitchOAuthService {
                 .text()
                 .await
                 .unwrap_or("Failed to auth user".to_string());
-            return Err((status, error_text));
+            return Err(HttpError::AuthError(format!("{}: {}", status, error_text)));
         }
 
-        let token_data = response.json::<TokenResponse>().await.map_err(|e| {
-            (
-                e.status().unwrap_or(StatusCode::INTERNAL_SERVER_ERROR),
-                e.to_string(),
-            )
-        })?;
+        let token_data = response
+            .json::<TokenResponse>()
+            .await
+            .map_err(HttpError::ReqwestError)?;
         Ok(token_data)
     }
 
-    pub async fn refresh_token(&self, refresh_token: &str) -> Result<TokenResponse> {
+    pub async fn refresh_token(&self, refresh_token: &str) -> Result<TokenResponse, HttpError> {
         let params = [
             ("client_id", self.client_id.as_str()),
             ("client_secret", self.client_secret.as_str()),
@@ -98,14 +89,21 @@ impl TwitchOAuthService {
             .post("https://id.twitch.tv/oauth2/token")
             .form(&params)
             .send()
-            .await?;
+            .await
+            .map_err(HttpError::TwitchError)?;
 
         if !response.status().is_success() {
-            let error_text = response.text().await?;
-            return Err(anyhow!("Failed to refresh token: {}", error_text));
+            let error_text = response.text().await.map_err(HttpError::ReqwestError)?;
+            return Err(HttpError::AuthError(format!(
+                "Failed to refresh token: {}",
+                error_text
+            )));
         }
 
-        let token_data = response.json::<TokenResponse>().await?;
+        let token_data = response
+            .json::<TokenResponse>()
+            .await
+            .map_err(HttpError::ReqwestError)?;
         Ok(token_data)
     }
 

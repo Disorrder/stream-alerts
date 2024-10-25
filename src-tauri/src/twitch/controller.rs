@@ -1,9 +1,11 @@
+use crate::common::errors::HttpError;
 use crate::twitch::oauth2::TwitchOAuthService;
 use crate::twitch::sdk::TwitchSDK;
 use crate::{config::store::Store, twitch::store::TwitchStore};
 use axum::routing::get;
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
 use reqwest::StatusCode;
+use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
 
@@ -32,33 +34,38 @@ pub fn routes(store: Store) -> Router {
     router
 }
 
-async fn auth_by_code(
-    State(state): State<Arc<TwitchState>>,
-    Json(payload): Json<serde_json::Value>,
-) -> impl IntoResponse {
-    let code = payload.get("code").unwrap().as_str().unwrap();
-    let token_data = state.oauth_service.exchange_code_for_token(code).await;
-
-    state.store.set_twitch_tokens(&token_data.unwrap()).unwrap(); //? replace unwrap
-
-    (StatusCode::OK, "OK".to_string())
+#[derive(Deserialize)]
+struct AuthPayload {
+    code: String,
 }
 
-async fn refresh_token(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
+async fn auth_by_code(
+    State(state): State<Arc<TwitchState>>,
+    Json(payload): Json<AuthPayload>,
+) -> Result<impl IntoResponse, HttpError> {
+    let code = payload.code;
+    let token_data = state.oauth_service.exchange_code_for_token(&code).await?;
+    state.store.set_twitch_tokens(&token_data)?;
+    Ok((StatusCode::OK, "OK".to_string()))
+}
+
+async fn refresh_token(
+    State(state): State<Arc<TwitchState>>,
+) -> Result<impl IntoResponse, HttpError> {
     let token_data = match state.store.get_twitch_tokens() {
         Ok(Some(data)) => data,
-        Ok(None) => return (StatusCode::UNAUTHORIZED, "No token data".to_string()),
+        Ok(None) => return Err(HttpError::AuthError("No token data".to_string())),
         Err(e) => {
             println!("🚀 ~ refresh_token ~ e: {:?}", e);
-            return (StatusCode::UNAUTHORIZED, e.to_string());
+            return Err(HttpError::AuthError(e.to_string()));
         }
     };
 
     let refresh_token = token_data.refresh_token;
-    let token_data = state.oauth_service.refresh_token(&refresh_token).await;
-    state.store.set_twitch_tokens(&token_data.unwrap()).unwrap();
+    let token_data = state.oauth_service.refresh_token(&refresh_token).await?;
+    state.store.set_twitch_tokens(&token_data)?;
 
-    (StatusCode::OK, "OK".to_string())
+    Ok((StatusCode::OK, "OK".to_string()))
 }
 
 async fn get_user(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {

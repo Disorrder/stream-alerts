@@ -1,4 +1,5 @@
 mod api;
+mod common;
 mod config;
 mod twitch;
 mod websocket;
