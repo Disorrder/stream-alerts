@@ -1,5 +1,5 @@
 import type { AssetFile } from "./assets.types";
-import type { EventPlatform, EventType } from "./event.types";
+import type { EventPlatform, EventType } from "./events.types";
 
 export type TransformXAlign = "left" | "center" | "right";
 export type TransformYAlign = "top" | "center" | "bottom";
@@ -11,18 +11,28 @@ export interface WidgetTransform {
   // scale: number; // TODO: add scale
 }
 
-interface SpineAnimation {
+interface SpineFrameParams {
   name: string;
   duration: number;
   delay?: number;
 }
+interface SoundParams {
+  file: AssetFile;
+  duration: number;
+  volume?: number;
+  delay?: number;
+}
+interface SpineAnimationFrame {
+  spine: SpineFrameParams;
+  sound?: SoundParams;
+}
 
-export interface SpineAnimations {
+export interface SpineAnimationParams {
   jsonFile: AssetFile;
   atlasFile: AssetFile;
-  intro: SpineAnimation;
-  idle: SpineAnimation;
-  outro: SpineAnimation;
+  intro: SpineAnimationFrame;
+  idle: SpineAnimationFrame;
+  outro: SpineAnimationFrame;
 }
 
 export interface WidgetMessageBox {
@@ -37,9 +47,9 @@ export interface TextTemplate {
 
 export interface SpineWidget {
   eventType: EventType;
-  platform: EventPlatform;
+  platforms: EventPlatform[];
   transform: WidgetTransform;
-  animatioNikins: SpineAnimations;
+  animations: SpineAnimationParams;
   messageBox: WidgetMessageBox;
   titleTemplate: TextTemplate;
   subtitleTemplate: TextTemplate;
