@@ -1,4 +1,4 @@
-use crate::common::errors::HttpError;
+use crate::common::http_error::HttpError;
 use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -20,7 +20,7 @@ pub struct TwitchOAuthService {
 }
 
 impl TwitchOAuthService {
-    pub fn new() -> Result<Self> {
+    pub fn new() -> Self {
         let client_id =
             env!("TWITCH_CLIENT_ID", "TWITCH_CLIENT_ID not set at build time").to_string();
         let client_secret = env!(
@@ -34,12 +34,12 @@ impl TwitchOAuthService {
             .unwrap_or(6969);
         let redirect_uri = format!("http://localhost:{}/auth/twitch-callback", port);
 
-        Ok(Self {
+        Self {
             client: Client::new(),
             client_id,
             client_secret,
             redirect_uri,
-        })
+        }
     }
 
     pub async fn exchange_code_for_token(&self, code: &str) -> Result<TokenResponse, HttpError> {
@@ -58,21 +58,13 @@ impl TwitchOAuthService {
             .form(&params)
             .send()
             .await
-            .map_err(HttpError::TwitchError)?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let error_text = response
-                .text()
-                .await
-                .unwrap_or("Failed to auth user".to_string());
-            return Err(HttpError::AuthError(format!("{}: {}", status, error_text)));
-        }
+            .map_err(HttpError::TwitchFailed)?;
 
         let token_data = response
             .json::<TokenResponse>()
             .await
-            .map_err(HttpError::ReqwestError)?;
+            .map_err(HttpError::TwitchFailed)?;
+
         Ok(token_data)
     }
 
@@ -90,20 +82,12 @@ impl TwitchOAuthService {
             .form(&params)
             .send()
             .await
-            .map_err(HttpError::TwitchError)?;
-
-        if !response.status().is_success() {
-            let error_text = response.text().await.map_err(HttpError::ReqwestError)?;
-            return Err(HttpError::AuthError(format!(
-                "Failed to refresh token: {}",
-                error_text
-            )));
-        }
+            .map_err(HttpError::TwitchFailed)?;
 
         let token_data = response
             .json::<TokenResponse>()
             .await
-            .map_err(HttpError::ReqwestError)?;
+            .map_err(HttpError::TwitchFailed)?;
         Ok(token_data)
     }
 

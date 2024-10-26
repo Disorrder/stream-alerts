@@ -1,18 +1,12 @@
 use tauri_plugin_shell::ShellExt;
 
+use super::oauth2::TwitchOAuthService;
+
 #[tauri::command]
 pub fn twitch_open_oauth(app_handle: tauri::AppHandle) {
-    let client_id = env!("TWITCH_CLIENT_ID", "TWITCH_CLIENT_ID not set at build time").to_string();
-    let port = env!("TAURI_WEB_PORT", "TAURI_WEB_PORT not set at build time")
-        .to_string()
-        .parse::<u16>()
-        .unwrap_or(6969);
-    let redirect_uri = format!("http://localhost:{}/auth/twitch-callback", port);
-
-    let auth_url = format!(
-        "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope=channel:read:subscriptions",
-        client_id, redirect_uri
-    );
+    let oauth_service = TwitchOAuthService::new();
+    let auth_url = oauth_service.get_authorization_url(None);
+    println!("auth_url: {}", auth_url);
 
     // Open the default browser with the Twitch auth URL
     let _ = app_handle

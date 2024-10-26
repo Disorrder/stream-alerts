@@ -4,6 +4,7 @@ mod config;
 mod twitch;
 mod websocket;
 
+use std::sync::Arc;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,7 +16,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .setup(move |app| {
-            let app_handle = app.handle();
+            let app_handle = Arc::new(app.handle().clone());
 
             #[cfg(debug_assertions)] // only include this code on debug builds
             {
@@ -32,7 +33,7 @@ pub fn run() {
             });
             tauri::async_runtime::spawn(async move {
                 println!("Starting REST API server");
-                let _ = api::run(store).await;
+                let _ = api::run(app_handle, store).await;
             });
 
             Ok(())
