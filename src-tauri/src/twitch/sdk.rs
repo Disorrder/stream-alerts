@@ -6,6 +6,20 @@ use tokio::sync::Mutex;
 use twitch_api::twitch_oauth2::{AccessToken, ClientSecret, RefreshToken, UserToken};
 use twitch_api::{helix, HelixClient};
 
+pub enum TwitchSDKError {
+    NotConnected,
+    String(String),
+}
+
+impl TwitchSDKError {
+    pub fn message(&self) -> String {
+        match self {
+            Self::NotConnected => "Twitch account is not connected".to_string(),
+            Self::String(s) => s.clone(),
+        }
+    }
+}
+
 pub struct TwitchSDK {
     client: HelixClient<'static, reqwest::Client>,
     token: Arc<Mutex<Option<UserToken>>>,
@@ -23,13 +37,13 @@ impl TwitchSDK {
         }
     }
 
-    async fn get_or_create_token(&self) -> Result<UserToken, String> {
+    async fn get_or_create_token(&self) -> Result<Option<UserToken>, String> {
         // If we already have a token, return it
         let token_ref = self.token.clone();
         let token_mut = token_ref.lock().await;
 
         if let Some(token) = token_mut.as_ref() {
-            return Ok(token.clone());
+            return Ok(Some(token.clone()));
         }
 
         drop(token_mut);
@@ -41,7 +55,18 @@ impl TwitchSDK {
             )
             .to_string(),
         );
-        let token_data = self.store.get_twitch_tokens().unwrap().unwrap(); //?
+        let token_data = match self.store.get_twitch_tokens() {
+            Ok(data) => data,
+            Err(e) => {
+                println!("🚀 ~ get_or_create_token ~ e: {:?}", e);
+                return Err(e.to_string());
+            }
+        };
+
+        if token_data.is_none() {
+            return Ok(None);
+        }
+        let token_data = token_data.unwrap();
         let access_token = AccessToken::new(token_data.access_token);
         let refresh_token = RefreshToken::new(token_data.refresh_token);
         let token_res = UserToken::from_existing(
@@ -54,7 +79,7 @@ impl TwitchSDK {
         match token_res {
             Ok(token_data) => {
                 *token_ref.lock().await = Some(token_data.clone());
-                Ok(token_data)
+                Ok(Some(token_data))
             }
             Err(e) => {
                 println!("[ERROR] TwitchSDK::get_token: {}", e);
@@ -63,8 +88,18 @@ impl TwitchSDK {
         }
     }
 
-    pub async fn get_user(&self) -> Result<helix::users::User, String> {
+    pub async fn reset_token(&self) -> Result<(), String> {
+        let token_ref = self.token.clone();
+        *token_ref.lock().await = None;
+        Ok(())
+    }
+
+    pub async fn get_user(&self) -> Result<Option<helix::users::User>, String> {
         let token = self.get_or_create_token().await?;
+        if token.is_none() {
+            return Ok(None);
+        }
+        let token = token.unwrap();
         let user_id = token.user_id.clone();
 
         let client = self.client.clone();
@@ -77,21 +112,26 @@ impl TwitchSDK {
                 e.to_string()
             })?;
 
-        users
-            .into_iter()
-            .next()
-            .ok_or_else(|| "User not found".to_string())
+        let user = users.into_iter().next();
+        Ok(user)
     }
 
-    pub async fn get_followers_count(&self) -> Result<u64, String> {
-        let token = self.get_or_create_token().await?;
+    pub async fn get_followers_count(&self) -> Result<u64, TwitchSDKError> {
+        let token = self
+            .get_or_create_token()
+            .await
+            .map_err(TwitchSDKError::String)?;
+        if token.is_none() {
+            return Err(TwitchSDKError::NotConnected);
+        }
+        let token = token.unwrap();
         let user_id = token.user_id.clone();
 
         let client = self.client.clone();
         let followers = client
             .get_total_channel_followers(&user_id, &token)
             .await
-            .map_err(|e| e.to_string())?;
+            .map_err(|e| TwitchSDKError::String(e.to_string()))?;
 
         Ok(followers as u64)
     }

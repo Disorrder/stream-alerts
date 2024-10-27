@@ -3,6 +3,8 @@ use axum::response::{IntoResponse, Response};
 
 pub enum HttpError {
     Unauthorized(String),
+    BadRequest(String),
+    InternalServerError(String),
     LibSerdeFailed(serde_json::Error),
     LibSledFailed(sled::Error),
     LibReqwestFailed(reqwest::Error),
@@ -18,6 +20,10 @@ impl IntoResponse for HttpError {
                 StatusCode::UNAUTHORIZED,
                 format!("Unauthorized: {}", message),
             ),
+            Self::BadRequest(message) => {
+                (StatusCode::BAD_REQUEST, format!("Bad request: {}", message))
+            }
+            Self::InternalServerError(message) => (StatusCode::INTERNAL_SERVER_ERROR, message),
             /* Libraries */
             Self::LibSerdeFailed(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,

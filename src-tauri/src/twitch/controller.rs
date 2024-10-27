@@ -10,6 +10,8 @@ use serde_json::json;
 use std::sync::Arc;
 use tauri_plugin_shell::ShellExt;
 
+use super::sdk::TwitchSDKError;
+
 pub struct TwitchState {
     app_handle: Arc<tauri::AppHandle>,
     store: Store,
@@ -39,11 +41,6 @@ pub fn routes(app_handle: Arc<tauri::AppHandle>, store: Store) -> Router {
     router
 }
 
-#[derive(Deserialize)]
-struct AuthPayload {
-    code: String,
-}
-
 async fn open_oauth_window(State(state): State<Arc<TwitchState>>) {
     let auth_url = state.oauth_service.get_authorization_url(None);
     println!("auth_url: {}", auth_url);
@@ -56,9 +53,14 @@ async fn open_oauth_window(State(state): State<Arc<TwitchState>>) {
         .map_err(|e| e.to_string());
 }
 
+#[derive(Deserialize)]
+struct AuthPayloadDTO {
+    code: String,
+}
+
 async fn auth_by_code(
     State(state): State<Arc<TwitchState>>,
-    Json(payload): Json<AuthPayload>,
+    Json(payload): Json<AuthPayloadDTO>,
 ) -> Result<impl IntoResponse, HttpError> {
     let code = payload.code;
     let token_data = state.oauth_service.exchange_code_for_token(&code).await?;
@@ -106,10 +108,20 @@ async fn detach_user(
         .store
         .delete_twitch_tokens()
         .map_err(|e| HttpError::StoreFailed(format!("Can't delete tokens, {}", e.to_string())))?;
+    state
+        .sdk
+        .reset_token()
+        .await
+        .map_err(|e| HttpError::StoreFailed(e.to_string()))?;
     Ok((StatusCode::OK, "OK".to_string()))
 }
 
-async fn get_followers_count(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
-    let count = state.sdk.get_followers_count().await;
-    (StatusCode::OK, Json(json!(count)))
+async fn get_followers_count(
+    State(state): State<Arc<TwitchState>>,
+) -> Result<impl IntoResponse, HttpError> {
+    let count = state.sdk.get_followers_count().await.map_err(|e| match e {
+        TwitchSDKError::NotConnected => HttpError::BadRequest(e.message()),
+        TwitchSDKError::String(s) => HttpError::BadRequest(s),
+    })?;
+    Ok((StatusCode::OK, Json(json!(count))))
 }
