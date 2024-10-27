@@ -23,13 +23,17 @@ export const Route = createFileRoute("/_app/settings")({
 function Settings() {
   const twitchUserQuery = useTwitchUserQuery();
 
+  async function openTwitchOAuth() {
+    await api.post("/twitch/auth/open");
+  }
+
   function renderTwitchButton() {
     const { data, isLoading } = twitchUserQuery;
     return (
       <Button
         variant="twitch"
         disabled={!!data || isLoading}
-        onClick={() => invoke("twitch_open_oauth")}
+        onClick={openTwitchOAuth}
       >
         <TwitchIcon className="size-5" />
         {!data ? "Add Twitch" : "Connected"}

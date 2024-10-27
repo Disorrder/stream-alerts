@@ -41,10 +41,7 @@ pub fn run() {
         .plugin(tauri_plugin_localhost::Builder::new(port).build())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![
-            greet,
-            twitch::commands::twitch_open_oauth
-        ])
+        .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
