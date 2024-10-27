@@ -1,8 +1,10 @@
 use axum::routing::get;
 use socketioxide::{extract::SocketRef, SocketIo};
-use tower_http::cors::{Any, CorsLayer};
+use std::sync::Arc;
+use tauri::{App, Manager};
+use tower_http::cors::CorsLayer;
 
-pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
+pub fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let port = env!("TAURI_WS_PORT", "TAURI_WS_PORT not set at build time")
         .to_string()
         .parse::<u16>()
@@ -16,18 +18,19 @@ pub async fn run() -> Result<(), Box<dyn std::error::Error>> {
         s.on("profile:get", &get_profile);
     });
 
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
-
-    let app = axum::Router::new()
+    let router = axum::Router::new()
         .route("/", get(|| async { "Hello, World!" }))
         .layer(layer)
-        .layer(cors);
+        .layer(CorsLayer::permissive());
 
-    let listener = tokio::net::TcpListener::bind(host).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let io = Arc::new(io);
+    app.manage(io);
+
+    tauri::async_runtime::spawn(async move {
+        println!("Starting websocket server on {}", host);
+        let listener = tokio::net::TcpListener::bind(host).await.unwrap();
+        axum::serve(listener, router).await.unwrap();
+    });
 
     Ok(())
 }

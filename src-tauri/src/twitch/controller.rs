@@ -1,6 +1,6 @@
 use crate::common::http_error::HttpError;
 use crate::twitch::oauth2::TwitchOAuthService;
-use crate::twitch::sdk::TwitchSDK;
+use crate::twitch::sdk::{TwitchSDK, TwitchSDKError};
 use crate::{config::store::Store, twitch::store::TwitchStore};
 use axum::routing::{delete, get};
 use axum::{extract::State, response::IntoResponse, routing::post, Json, Router};
@@ -8,18 +8,20 @@ use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
+use tauri::{App, Manager};
 use tauri_plugin_shell::ShellExt;
 
-use super::sdk::TwitchSDKError;
-
 pub struct TwitchState {
-    app_handle: Arc<tauri::AppHandle>,
-    store: Store,
+    app_handle: tauri::AppHandle,
+    store: Arc<Store>,
     oauth_service: TwitchOAuthService,
     sdk: TwitchSDK,
 }
 
-pub fn routes(app_handle: Arc<tauri::AppHandle>, store: Store) -> Router {
+pub fn routes(app: &mut App) -> Router {
+    let app_handle = app.handle().clone();
+    let store = app.state::<Arc<Store>>().inner().clone();
+
     let oauth_service = TwitchOAuthService::new();
     let sdk = TwitchSDK::new(store.clone());
 

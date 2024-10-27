@@ -24,11 +24,11 @@ impl TwitchSDKError {
 pub struct TwitchSDK {
     client: HelixClient<'static, reqwest::Client>,
     token: Arc<Mutex<Option<UserToken>>>,
-    store: Store,
+    store: Arc<Store>,
 }
 
 impl TwitchSDK {
-    pub fn new(store: Store) -> Self {
+    pub fn new(store: Arc<Store>) -> Self {
         let client = HelixClient::default();
 
         Self {
