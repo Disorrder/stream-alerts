@@ -75,7 +75,7 @@ function SettingsTwitch() {
               <Avatar src={data.profile_image_url} className="size-10" />
               <div className="flex-1">
                 <div>Followers: {followersQuery.data || "Loading..."}</div>
-                <div>Subscribers: 123</div>
+                <div>Subscribers: TODO</div>
               </div>
             </div>
             <div className="flex items-center gap-2">

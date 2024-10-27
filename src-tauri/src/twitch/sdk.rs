@@ -8,6 +8,7 @@ use twitch_api::{helix, HelixClient};
 
 pub enum TwitchSDKError {
     NotConnected,
+    // TODO: TokenExpired,
     String(String),
 }
 
@@ -58,7 +59,7 @@ impl TwitchSDK {
         let token_data = match self.store.get_twitch_tokens() {
             Ok(data) => data,
             Err(e) => {
-                println!("🚀 ~ get_or_create_token ~ e: {:?}", e);
+                println!("[ERROR] TwitchSDK::get_or_create_token: {}", e);
                 return Err(e.to_string());
             }
         };
