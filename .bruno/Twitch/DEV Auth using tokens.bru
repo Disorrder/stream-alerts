@@ -1,0 +1,15 @@
+meta {
+  name: DEV Auth using tokens
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{api}}/twitch/dev-auth/code
+  body: json
+  auth: none
+}
+
+body:json {
+  {"code": "qweqwe"}
+}

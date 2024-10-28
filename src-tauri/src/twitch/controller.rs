@@ -11,6 +11,8 @@ use std::sync::Arc;
 use tauri::{App, Manager};
 use tauri_plugin_shell::ShellExt;
 
+use super::oauth2::TokenResponse;
+
 pub struct TwitchState {
     app_handle: tauri::AppHandle,
     store: Arc<Store>,
@@ -35,6 +37,9 @@ pub fn routes(app: &mut App) -> Router {
     });
 
     let router = Router::new()
+        // Dev Routes
+        .route("/dev-auth/tokens", post(auth_by_tokens))
+        // User Routes
         .route("/auth/open", post(open_oauth_window))
         .route("/auth/code", post(auth_by_code))
         .route("/refresh", post(refresh_token))
@@ -68,6 +73,44 @@ async fn auth_by_code(
 ) -> Result<impl IntoResponse, HttpError> {
     let code = payload.code;
     let token_data = state.oauth_service.exchange_code_for_token(&code).await?;
+    state
+        .store
+        .set_twitch_tokens(&token_data)
+        .map_err(|e| HttpError::StoreFailed(format!("Can't save tokens, {}", e.to_string())))?;
+    Ok((StatusCode::OK, "OK".to_string()))
+}
+
+#[derive(Deserialize)]
+struct AuthByTokensPayloadDTO {
+    access_token: String,
+    refresh_token: String,
+}
+
+// Using Twitch CLI:
+// twitch token -u -s "channel:read:hype_train channel:read:subscriptions moderator:read:followers user:read:email user:read:subscriptions"
+async fn auth_by_tokens(
+    State(state): State<Arc<TwitchState>>,
+    Json(payload): Json<AuthByTokensPayloadDTO>,
+) -> Result<impl IntoResponse, HttpError> {
+    let access_token = payload.access_token;
+    let refresh_token = payload.refresh_token;
+    let token_data = TokenResponse {
+        access_token,
+        refresh_token,
+        expires_in: 10000,
+        scope: vec![
+            "channel:read:hype_train".to_string(),
+            // "channel:read:redemptions",
+            "channel:read:subscriptions".to_string(),
+            // "channel:read:vips",
+            // "moderation:read",
+            // "moderator:read:banned_users",
+            "moderator:read:followers".to_string(),
+            "user:read:email".to_string(),
+            "user:read:subscriptions".to_string(),
+        ],
+        token_type: "bearer".to_string(),
+    };
     state
         .store
         .set_twitch_tokens(&token_data)

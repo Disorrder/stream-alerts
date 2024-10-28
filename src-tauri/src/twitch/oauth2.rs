@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 pub struct TokenResponse {
     pub access_token: String,
     pub refresh_token: String,
-    expires_in: i32,
-    scope: Vec<String>,
-    token_type: String,
+    pub expires_in: i32,
+    pub scope: Vec<String>,
+    pub token_type: String,
 }
 
 pub struct TwitchOAuthService {

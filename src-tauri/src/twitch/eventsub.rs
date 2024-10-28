@@ -4,7 +4,7 @@ use tokio_tungstenite::tungstenite;
 use tungstenite::protocol::WebSocketConfig;
 use twitch_api::{
     eventsub::{self, Event, EventsubWebsocketData, ReconnectPayload, SessionData, WelcomePayload},
-    twitch_oauth2::{self, TwitchToken, UserToken},
+    // twitch_oauth2::{self, TwitchToken, UserToken},
 };
 use url::Url;
 
@@ -19,7 +19,8 @@ impl EventsubClient {
     pub fn new(sdk: Arc<TwitchSDK>) -> Self {
         Self {
             sdk,
-            connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
+            // connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
+            connect_url: "ws://127.0.0.1:8080/ws".parse().unwrap(),
         }
     }
 
@@ -45,7 +46,10 @@ impl EventsubClient {
         .await
         .map_err(|e| format!("Can't connect: {}", e))?;
 
-        println!("WebSocket handshake has been successfully completed");
+        println!(
+            "WebSocket handshake has been successfully completed on {}",
+            self.connect_url.as_str()
+        );
 
         Ok(socket)
     }
@@ -198,9 +202,9 @@ impl EventsubClient {
 pub fn setup(app: &App) -> Result<(), String> {
     let sdk = app.state::<Arc<TwitchSDK>>().inner().clone();
 
+    let eventsub = EventsubClient::new(sdk);
     tauri::async_runtime::spawn(async move {
         println!("Starting eventsub server");
-        let eventsub = EventsubClient::new(sdk);
         eventsub.run().await.unwrap();
     });
 

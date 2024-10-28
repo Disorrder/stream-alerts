@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import TwitchIcon from "~/assets/icons/twitch.svg?react";
 import { ConfirmDialog } from "~/components/custom/ConfirmDialog";
