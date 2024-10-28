@@ -23,6 +23,7 @@ pub fn run() {
             }
 
             config::store::setup(app)?;
+            config::db::setup(app)?;
             websocket::setup(app)?;
             api::setup(app)?;
             twitch::eventsub::setup(app)?;
