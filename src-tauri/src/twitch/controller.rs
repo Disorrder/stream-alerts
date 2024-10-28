@@ -15,7 +15,7 @@ pub struct TwitchState {
     app_handle: tauri::AppHandle,
     store: Arc<Store>,
     oauth_service: TwitchOAuthService,
-    sdk: TwitchSDK,
+    sdk: Arc<TwitchSDK>,
 }
 
 pub fn routes(app: &mut App) -> Router {
@@ -24,6 +24,8 @@ pub fn routes(app: &mut App) -> Router {
 
     let oauth_service = TwitchOAuthService::new();
     let sdk = TwitchSDK::new(store.clone());
+    let sdk = Arc::new(sdk);
+    app.manage(sdk.clone());
 
     let state = Arc::new(TwitchState {
         app_handle,

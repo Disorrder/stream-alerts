@@ -38,12 +38,17 @@ impl TwitchSDK {
         }
     }
 
-    async fn get_or_create_token(&self) -> Result<Option<UserToken>, String> {
+    pub fn get_client(&self) -> HelixClient<'static, reqwest::Client> {
+        self.client.clone()
+    }
+
+    pub async fn get_or_create_token(&self) -> Result<Option<UserToken>, String> {
         // If we already have a token, return it
         let token_ref = self.token.clone();
         let token_mut = token_ref.lock().await;
 
         if let Some(token) = token_mut.as_ref() {
+            // TODO: check if token is expired (is_elapsed)
             return Ok(Some(token.clone()));
         }
 

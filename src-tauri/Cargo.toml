@@ -38,10 +38,13 @@ twitch_api = { version = "0.7.0-rc.8", features = [
   "helix",
   "eventsub",
   "reqwest",
+  "hmac",
+  "deny_unknown_fields",
 ] }
 tauri-plugin-localhost = "2.0.1"
 futures = "0.3.31"
 axum-macros = "0.4.2"
+tokio-tungstenite = { version = "0.24.0", features = ["native-tls", "url"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2"

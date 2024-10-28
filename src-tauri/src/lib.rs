@@ -25,6 +25,7 @@ pub fn run() {
             config::store::setup(app)?;
             websocket::setup(app)?;
             api::setup(app)?;
+            twitch::eventsub::setup(app)?;
 
             Ok(())
         })
