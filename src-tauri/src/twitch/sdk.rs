@@ -23,7 +23,7 @@ impl TwitchSDKError {
 
 pub struct TwitchSDK {
     client: HelixClient<'static, reqwest::Client>,
-    token: Arc<Mutex<Option<UserToken>>>,
+    token: Mutex<Option<UserToken>>,
     store: Arc<Store>,
 }
 
@@ -33,7 +33,7 @@ impl TwitchSDK {
 
         Self {
             client,
-            token: Arc::new(Mutex::new(None)),
+            token: Mutex::new(None),
             store,
         }
     }
@@ -44,8 +44,8 @@ impl TwitchSDK {
 
     pub async fn get_or_create_token(&self) -> Result<Option<UserToken>, String> {
         // If we already have a token, return it
-        let token_ref = self.token.clone();
-        let token_mut = token_ref.lock().await;
+        // let token_ref = .clone();
+        let token_mut = self.token.lock().await;
 
         if let Some(token) = token_mut.as_ref() {
             // TODO: check if token is expired (is_elapsed)
@@ -84,7 +84,7 @@ impl TwitchSDK {
         .await;
         match token_res {
             Ok(token_data) => {
-                *token_ref.lock().await = Some(token_data.clone());
+                *self.token.lock().await = Some(token_data.clone());
                 Ok(Some(token_data))
             }
             Err(e) => {
@@ -95,8 +95,8 @@ impl TwitchSDK {
     }
 
     pub async fn reset_token(&self) -> Result<(), String> {
-        let token_ref = self.token.clone();
-        *token_ref.lock().await = None;
+        // let token_ref = .clone();
+        *self.token.lock().await = None;
         Ok(())
     }
 
@@ -118,8 +118,8 @@ impl TwitchSDK {
                 e.to_string()
             })?;
 
-        let user = users.into_iter().next();
-        Ok(user)
+        // let user = users.into_iter().next();
+        Ok(users.get(0).cloned())
     }
 
     pub async fn get_followers_count(&self) -> Result<u64, TwitchSDKError> {
@@ -127,15 +127,12 @@ impl TwitchSDK {
             .get_or_create_token()
             .await
             .map_err(TwitchSDKError::String)?;
-        if token.is_none() {
+        let Some(token) = token else {
             return Err(TwitchSDKError::NotConnected);
-        }
-        let token = token.unwrap();
-        let user_id = token.user_id.clone();
+        };
 
-        let client = self.client.clone();
-        let followers = client
-            .get_total_channel_followers(&user_id, &token)
+        let followers = self.client
+            .get_total_channel_followers(&token.user_id, &token)
             .await
             .map_err(|e| TwitchSDKError::String(e.to_string()))?;
 

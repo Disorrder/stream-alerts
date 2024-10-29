@@ -22,12 +22,11 @@ pub struct TwitchState {
 
 pub fn routes(app: &mut App) -> Router {
     let app_handle = app.handle().clone();
-    let store = app.state::<Arc<Store>>().inner().clone();
+    let store = Arc::clone(app.state::<Arc<Store>>().inner());
 
     let oauth_service = TwitchOAuthService::new();
-    let sdk = TwitchSDK::new(store.clone());
-    let sdk = Arc::new(sdk);
-    app.manage(sdk.clone());
+    let sdk = Arc::new(TwitchSDK::new(Arc::clone(&store)));
+    app.manage(Arc::clone(&sdk));
 
     let state = Arc::new(TwitchState {
         app_handle,
