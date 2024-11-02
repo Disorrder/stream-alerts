@@ -1,9 +1,10 @@
+use super::oauth2::{TokenResponse, TwitchOAuthService};
 use super::store::TwitchStore;
 use crate::config::store::Store;
 use futures::TryStreamExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use twitch_api::twitch_oauth2::{AccessToken, ClientSecret, RefreshToken, UserToken};
+use twitch_api::twitch_oauth2::{AccessToken, ClientSecret, RefreshToken, TwitchToken, UserToken};
 use twitch_api::{helix, HelixClient};
 
 pub enum TwitchSDKError {
@@ -23,18 +24,19 @@ impl TwitchSDKError {
 
 pub struct TwitchSDK {
     client: HelixClient<'static, reqwest::Client>,
-    token: Arc<Mutex<Option<UserToken>>>,
     store: Arc<Store>,
+    oauth_service: Arc<TwitchOAuthService>,
+    token: Mutex<Option<UserToken>>,
 }
 
 impl TwitchSDK {
-    pub fn new(store: Arc<Store>) -> Self {
+    pub fn new(store: Arc<Store>, oauth_service: Arc<TwitchOAuthService>) -> Self {
         let client = HelixClient::default();
-
         Self {
             client,
-            token: Arc::new(Mutex::new(None)),
             store,
+            oauth_service,
+            token: Mutex::new(None),
         }
     }
 
@@ -42,25 +44,36 @@ impl TwitchSDK {
         self.client.clone()
     }
 
-    pub async fn get_or_create_token(&self) -> Result<Option<UserToken>, String> {
-        // If we already have a token, return it
-        let token_ref = self.token.clone();
-        let token_mut = token_ref.lock().await;
+    pub async fn get_user_token(&self) -> Result<Option<UserToken>, String> {
+        // If we have a token already, return it
+        let token_mut = self.token.lock().await;
 
         if let Some(token) = token_mut.as_ref() {
-            // TODO: check if token is expired (is_elapsed)
-            return Ok(Some(token.clone()));
+            if !token.is_elapsed() {
+                return Ok(Some(token.clone()));
+            }
+            // If token is expired, refresh it
+            let refresh_token = match &token.refresh_token {
+                Some(refresh_token) => refresh_token,
+                None => return Err(TwitchSDKError::NotConnected.message()), // Should never happen
+            };
+            let refresh_token = refresh_token.as_str();
+
+            let token_data = self
+                .oauth_service
+                .refresh_token(&refresh_token)
+                .await
+                .map_err(|e| format!("{:?}", e))?;
+
+            drop(token_mut);
+
+            let user_token = self
+                .set_tokens(token_data.access_token, token_data.refresh_token)
+                .await?;
+
+            return Ok(user_token);
         }
 
-        drop(token_mut);
-
-        let client_secret = ClientSecret::new(
-            env!(
-                "TWITCH_CLIENT_SECRET",
-                "TWITCH_CLIENT_SECRET not set at build time"
-            )
-            .to_string(),
-        );
         let token_data = match self.store.get_twitch_tokens() {
             Ok(data) => data,
             Err(e) => {
@@ -72,36 +85,68 @@ impl TwitchSDK {
         if token_data.is_none() {
             return Ok(None);
         }
+
+        drop(token_mut);
         let token_data = token_data.unwrap();
-        let access_token = AccessToken::new(token_data.access_token);
-        let refresh_token = RefreshToken::new(token_data.refresh_token);
+        let user_token = self
+            .set_tokens(token_data.access_token, token_data.refresh_token)
+            .await?;
+        Ok(user_token)
+    }
+
+    pub async fn set_tokens(
+        &self,
+        access_token: String,
+        refresh_token: String,
+    ) -> Result<Option<UserToken>, String> {
+        let client_secret = ClientSecret::new(
+            env!(
+                "TWITCH_CLIENT_SECRET",
+                "TWITCH_CLIENT_SECRET not set at build time"
+            )
+            .to_string(),
+        );
+
+        let mut token_mut = self.token.lock().await;
+
         let token_res = UserToken::from_existing(
             &self.client,
-            access_token.clone(),
-            refresh_token.clone(),
+            AccessToken::new(access_token.clone()),
+            RefreshToken::new(refresh_token.clone()),
             client_secret,
         )
         .await;
-        match token_res {
-            Ok(token_data) => {
-                *token_ref.lock().await = Some(token_data.clone());
-                Ok(Some(token_data))
+
+        let user_token = match token_res {
+            Ok(user_token) => {
+                *token_mut = Some(user_token.clone());
+                user_token
             }
             Err(e) => {
-                println!("[ERROR] TwitchSDK::get_token: {}", e);
-                Err(e.to_string())
+                println!("[ERROR] TwitchSDK::set_tokens: {}", e);
+                return Err(e.to_string());
             }
-        }
+        };
+
+        let token_data = TokenResponse::new(access_token, refresh_token);
+        self.store.set_twitch_tokens(&token_data).map_err(|e| {
+            println!("[ERROR] TwitchSDK::set_tokens: {}", e);
+            e.to_string()
+        })?;
+
+        Ok(Some(user_token))
     }
 
     pub async fn reset_token(&self) -> Result<(), String> {
-        let token_ref = self.token.clone();
-        *token_ref.lock().await = None;
+        let mut token_mut = self.token.lock().await;
+        *token_mut = None;
         Ok(())
     }
 
+    // async fn
+
     pub async fn get_user(&self) -> Result<Option<helix::users::User>, String> {
-        let token = self.get_or_create_token().await?;
+        let token = self.get_user_token().await?;
         if token.is_none() {
             return Ok(None);
         }
@@ -118,13 +163,12 @@ impl TwitchSDK {
                 e.to_string()
             })?;
 
-        let user = users.into_iter().next();
-        Ok(user)
+        Ok(users.first().cloned())
     }
 
     pub async fn get_followers_count(&self) -> Result<u64, TwitchSDKError> {
         let token = self
-            .get_or_create_token()
+            .get_user_token()
             .await
             .map_err(TwitchSDKError::String)?;
         if token.is_none() {

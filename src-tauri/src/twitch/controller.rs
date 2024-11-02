@@ -1,3 +1,4 @@
+use super::oauth2::{TokenResponse, TWITCH_DEFAULT_SCOPE};
 use crate::common::http_error::HttpError;
 use crate::twitch::oauth2::TwitchOAuthService;
 use crate::twitch::sdk::{TwitchSDK, TwitchSDKError};
@@ -11,12 +12,10 @@ use std::sync::Arc;
 use tauri::{App, Manager};
 use tauri_plugin_shell::ShellExt;
 
-use super::oauth2::TokenResponse;
-
 pub struct TwitchState {
     app_handle: tauri::AppHandle,
     store: Arc<Store>,
-    oauth_service: TwitchOAuthService,
+    oauth_service: Arc<TwitchOAuthService>,
     sdk: Arc<TwitchSDK>,
 }
 
@@ -25,7 +24,9 @@ pub fn routes(app: &mut App) -> Router {
     let store = app.state::<Arc<Store>>().inner().clone();
 
     let oauth_service = TwitchOAuthService::new();
-    let sdk = TwitchSDK::new(store.clone());
+    let oauth_service = Arc::new(oauth_service);
+
+    let sdk = TwitchSDK::new(store.clone(), oauth_service.clone());
     let sdk = Arc::new(sdk);
     app.manage(sdk.clone());
 
@@ -86,34 +87,19 @@ struct AuthByTokensPayloadDTO {
     refresh_token: String,
 }
 
-// Using Twitch CLI:
-// twitch token -u -s "channel:read:hype_train channel:read:subscriptions moderator:read:followers user:read:email user:read:subscriptions"
+// Check README.md about Twitch CLI usage
 async fn auth_by_tokens(
     State(state): State<Arc<TwitchState>>,
     Json(payload): Json<AuthByTokensPayloadDTO>,
 ) -> Result<impl IntoResponse, HttpError> {
     let access_token = payload.access_token;
     let refresh_token = payload.refresh_token;
-    let token_data = TokenResponse {
-        access_token,
-        refresh_token,
-        expires_in: 10000,
-        scope: vec![
-            "channel:read:hype_train".to_string(),
-            // "channel:read:redemptions",
-            "channel:read:subscriptions".to_string(),
-            // "channel:read:vips",
-            // "moderation:read",
-            // "moderator:read:banned_users",
-            "moderator:read:followers".to_string(),
-            "user:read:email".to_string(),
-            "user:read:subscriptions".to_string(),
-        ],
-        token_type: "bearer".to_string(),
-    };
+    // let token_data = TokenResponse::new(access_token, refresh_token);
+    // TODO: Check if token is valid
     state
-        .store
-        .set_twitch_tokens(&token_data)
+        .sdk
+        .set_tokens(access_token, refresh_token)
+        .await
         .map_err(|e| HttpError::StoreFailed(format!("Can't save tokens, {}", e.to_string())))?;
     Ok((StatusCode::OK, "OK".to_string()))
 }
@@ -142,6 +128,7 @@ async fn refresh_token(
 
 async fn get_user(State(state): State<Arc<TwitchState>>) -> impl IntoResponse {
     let user = state.sdk.get_user().await;
+    println!("[DEBUG] USER get_user: user: {:?}", user);
     match user {
         Ok(user) => (StatusCode::OK, Json(json!(user))),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!(e))),

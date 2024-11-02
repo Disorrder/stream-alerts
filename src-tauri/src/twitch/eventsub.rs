@@ -150,7 +150,7 @@ impl EventsubClient {
 
         let sdk = self.sdk.clone();
         let client = sdk.get_client();
-        let token = sdk.get_or_create_token().await?;
+        let token = sdk.get_user_token().await?;
 
         if token.is_none() {
             return Err("No token".to_string());
@@ -205,7 +205,10 @@ pub fn setup(app: &App) -> Result<(), String> {
     let eventsub = EventsubClient::new(sdk);
     tauri::async_runtime::spawn(async move {
         println!("Starting eventsub server");
-        eventsub.run().await.unwrap();
+        eventsub.run().await.map_err(|e| {
+            println!("Error running eventsub: {}", e);
+            e
+        })
     });
 
     Ok(())

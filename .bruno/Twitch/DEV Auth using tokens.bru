@@ -5,11 +5,14 @@ meta {
 }
 
 post {
-  url: {{api}}/twitch/dev-auth/code
+  url: {{api}}/twitch/dev-auth/tokens
   body: json
   auth: none
 }
 
 body:json {
-  {"code": "qweqwe"}
+  {
+    "access_token": "bcifehavyekrna0zgz3n5q8htff5q5",
+    "refresh_token": "3fk5kcdtst00xswi3ne7u6m38go6c77gny51kranpb4u12xlf6"
+  }
 }

@@ -3,13 +3,38 @@ use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
+pub const TWITCH_DEFAULT_SCOPE: &[&str] = &[
+    "channel:read:hype_train", // TODO
+    // "channel:read:redemptions", // TODO
+    "channel:read:subscriptions",
+    // "channel:read:vips", // TODO
+    // "moderation:read", // TODO
+    // "moderator:read:banned_users", // TODO
+    // "moderator:read:shoutouts", //? Not sure, need to explore
+    "moderator:read:followers",
+    "user:read:email",
+    "user:read:subscriptions",
+];
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenResponse {
     pub access_token: String,
     pub refresh_token: String,
-    pub expires_in: i32,
-    pub scope: Vec<String>,
-    pub token_type: String,
+    scope: Vec<String>,
+    expires_in: i32,
+    token_type: String,
+}
+
+impl TokenResponse {
+    pub fn new(access_token: String, refresh_token: String) -> Self {
+        Self {
+            access_token,
+            refresh_token,
+            scope: TWITCH_DEFAULT_SCOPE.iter().map(|s| s.to_string()).collect(),
+            expires_in: 10000,
+            token_type: "bearer".to_string(),
+        }
+    }
 }
 
 pub struct TwitchOAuthService {
@@ -92,20 +117,7 @@ impl TwitchOAuthService {
     }
 
     pub fn get_authorization_url(&self, scopes: Option<Vec<&str>>) -> String {
-        let scopes = scopes.unwrap_or_else(|| {
-            vec![
-                "channel:read:hype_train", // TODO
-                // "channel:read:redemptions", // TODO
-                "channel:read:subscriptions",
-                // "channel:read:vips", // TODO
-                // "moderation:read", // TODO
-                // "moderator:read:banned_users", // TODO
-                // "moderator:read:shoutouts", //? Not sure, need to explore
-                "moderator:read:followers",
-                "user:read:email",
-                "user:read:subscriptions",
-            ]
-        });
+        let scopes = scopes.unwrap_or_else(|| TWITCH_DEFAULT_SCOPE.to_vec());
         let scope = scopes.join("+");
         format!(
             "https://id.twitch.tv/oauth2/authorize?client_id={}&redirect_uri={}&response_type=code&scope={}",
