@@ -45,53 +45,49 @@ impl TwitchSDK {
     }
 
     pub async fn get_user_token(&self) -> Result<Option<UserToken>, String> {
-        // If we have a token already, return it
-        let token_mut = self.token.lock().await;
+        let refresh_token: String;
 
-        if let Some(token) = token_mut.as_ref() {
+        let token_guard = self.token.lock().await;
+
+        // If we have a token already, return it
+        if let Some(token) = token_guard.as_ref() {
             if !token.is_elapsed() {
+                println!("[DEBUG] TwitchSDK::get_user_token: return token that is not expired");
                 return Ok(Some(token.clone()));
             }
             // If token is expired, refresh it
-            let refresh_token = match &token.refresh_token {
-                Some(refresh_token) => refresh_token,
-                None => return Err(TwitchSDKError::NotConnected.message()), // Should never happen
+            refresh_token = match &token.refresh_token {
+                Some(refresh_token) => refresh_token.to_string(),
+                None => return Err(TwitchSDKError::NotConnected.message()), // Never gonna happen
             };
-            let refresh_token = refresh_token.as_str();
+        } else {
+            // If we don't have a token, try to get it from the store
+            let tokens_res = match self.store.get_twitch_tokens() {
+                Ok(data) => data,
+                Err(_) => None, // Never gonna happen
+            };
 
-            let token_data = self
-                .oauth_service
-                .refresh_token(&refresh_token)
-                .await
-                .map_err(|e| format!("{:?}", e))?;
-
-            drop(token_mut);
-
-            let user_token = self
-                .set_tokens(token_data.access_token, token_data.refresh_token)
-                .await?;
-
-            return Ok(user_token);
-        }
-
-        let token_data = match self.store.get_twitch_tokens() {
-            Ok(data) => data,
-            Err(e) => {
-                println!("[ERROR] TwitchSDK::get_or_create_token: {}", e);
-                return Err(e.to_string());
+            if let Some(token_data) = tokens_res {
+                refresh_token = token_data.refresh_token;
+            } else {
+                return Ok(None);
             }
-        };
-
-        if token_data.is_none() {
-            return Ok(None);
         }
 
-        drop(token_mut);
-        let token_data = token_data.unwrap();
+        let token_data = self
+            .oauth_service
+            .refresh_token(&refresh_token)
+            .await
+            .map_err(|e| format!("{:?}", e))?;
+
+        drop(token_guard);
+
         let user_token = self
             .set_tokens(token_data.access_token, token_data.refresh_token)
             .await?;
-        Ok(user_token)
+
+        println!("[DEBUG] TwitchSDK::get_user_token: return refreshed token");
+        return Ok(user_token);
     }
 
     pub async fn set_tokens(
