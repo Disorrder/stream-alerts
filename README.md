@@ -19,3 +19,9 @@ twitch event websocket start-server
 ```bash
 twitch token -u -s "channel:read:hype_train channel:read:subscriptions moderator:read:followers user:read:email user:read:subscriptions"
 ```
+
+Trigger examples:
+
+```bash
+twitch event trigger channel.follow -t 37530098 --transport=websocket
+```

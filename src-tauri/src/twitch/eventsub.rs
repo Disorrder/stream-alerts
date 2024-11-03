@@ -2,9 +2,8 @@ use std::sync::Arc;
 use tauri::{App, Manager};
 use tokio_tungstenite::tungstenite;
 use tungstenite::protocol::WebSocketConfig;
-use twitch_api::{
-    eventsub::{self, Event, EventsubWebsocketData, ReconnectPayload, SessionData, WelcomePayload},
-    // twitch_oauth2::{self, TwitchToken, UserToken},
+use twitch_api::eventsub::{
+    self, Event, EventsubWebsocketData, ReconnectPayload, SessionData, WelcomePayload,
 };
 use url::Url;
 
@@ -17,10 +16,13 @@ pub struct EventsubClient {
 
 impl EventsubClient {
     pub fn new(sdk: Arc<TwitchSDK>) -> Self {
+        println!(
+            "TWITCH_EVENTSUB_WEBSOCKET_URL: {}",
+            twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone()
+        );
         Self {
             sdk,
-            // connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
-            connect_url: "ws://127.0.0.1:8080/ws".parse().unwrap(),
+            connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
         }
     }
 
@@ -32,6 +34,9 @@ impl EventsubClient {
         >,
         String,
     > {
+        let sdk = self.sdk.clone();
+        let _token = sdk.get_user_token().await?;
+
         let config = WebSocketConfig {
             max_message_size: Some(64 << 20), // 64 MiB
             max_frame_size: Some(16 << 20),   // 16 MiB
@@ -194,7 +199,6 @@ impl EventsubClient {
             .await
             .map_err(|e| format!("when follower appears: {}", e))?;
 
-        println!("listening to ban and unbans");
         Ok(())
     }
 }
