@@ -24,6 +24,10 @@ fn main() {
         "cargo:rustc-env=TWITCH_CLIENT_SECRET={}",
         env::var("TWITCH_CLIENT_SECRET").unwrap()
     );
+    println!(
+        "cargo:rustc-env=TWITCH_EVENTSUB_WEBSOCKET_URL={}",
+        env::var("TWITCH_EVENTSUB_WEBSOCKET_URL").unwrap()
+    );
 
     tauri_build::build()
 }

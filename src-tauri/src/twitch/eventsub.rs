@@ -16,14 +16,9 @@ pub struct EventsubClient {
 
 impl EventsubClient {
     pub fn new(sdk: Arc<TwitchSDK>) -> Self {
-        println!(
-            "TWITCH_EVENTSUB_WEBSOCKET_URL: {}",
-            twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone()
-        );
-        Self {
-            sdk,
-            connect_url: twitch_api::TWITCH_EVENTSUB_WEBSOCKET_URL.clone(),
-        }
+        let connect_url = env!("TWITCH_EVENTSUB_WEBSOCKET_URL").parse().unwrap();
+        println!("TWITCH_EVENTSUB_WEBSOCKET_URL: {}", connect_url);
+        Self { sdk, connect_url }
     }
 
     pub async fn connect(
@@ -154,7 +149,8 @@ impl EventsubClient {
         }
 
         let sdk = self.sdk.clone();
-        let client = sdk.get_client();
+        // let client = sdk.get_client();
+        let client = sdk.get_mock_client(); // TODO: use mock client only if TWITCH_EVENTSUB_WEBSOCKET_URL is set to localhost (Colin :D)
         let token = sdk.get_user_token().await?;
 
         if token.is_none() {

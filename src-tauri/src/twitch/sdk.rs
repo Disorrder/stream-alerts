@@ -1,3 +1,4 @@
+use super::mock_client;
 use super::oauth2::{TokenResponse, TwitchOAuthService};
 use super::store::TwitchStore;
 use crate::config::store::Store;
@@ -42,6 +43,14 @@ impl TwitchSDK {
 
     pub fn get_client(&self) -> HelixClient<'static, reqwest::Client> {
         self.client.clone()
+    }
+
+    pub fn get_mock_client(&self) -> HelixClient<'static, mock_client::Wrapper<reqwest::Client>> {
+        let client = mock_client::Wrapper::<reqwest::Client>::new(
+            twitch_api::client::ClientDefault::default_client(),
+            "http://127.0.0.1:8080".to_string(),
+        );
+        twitch_api::HelixClient::with_client(client)
     }
 
     pub async fn get_user_token(&self) -> Result<Option<UserToken>, String> {
